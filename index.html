@@ -118,29 +118,35 @@
 
         .keyboard {
             display: grid;
-            gap: 4px;
+            grid-template-columns: repeat(14, 1fr);
+            border: 1px solid #444;
         }
 
-        .row {
-            display: grid;
-            gap: 4px;
+        .keyboard .key {
+            border: none;
+            box-shadow: inset 2px 2px 0px 0px #ffffff12, inset -2px -2px 0px 0px #000000d9; 
         }
 
-        .row-1 { grid-template-columns: 1fr 1fr 1fr 1fr 1fr 2fr; }
-        .row-hex { grid-template-columns: repeat(6, 1fr); display: none; }
-        .row-hex.active { display: grid; }
-        .row-2, .row-3, .row-4, .row-5 { grid-template-columns: repeat(7, 1fr); }
-        .row-fn { grid-template-columns: repeat(4, 1fr); }
-        .row-6 { grid-template-columns: 2fr 2fr 2fr 2fr; }
+        #main-keys, #fn-keys {
+            display: contents;
+        }
 
-        #main-keys { display: grid; gap: 4px; }
-        #fn-keys { display: none; gap: 4px; }
-        #fn-keys.active { display: grid; }
+        #fn-keys { display: none; }
+        #fn-keys.active { display: contents; }
+
+        .row-hex { display: none; }
+        .row-hex.active { display: contents; }
+
+        .key { grid-column: span 2; }
+        .key.wide { grid-column: span 4; }
+        .key.w3 { grid-column: span 3; }
+        .key.fn-w4 { grid-column: span 4; }
+        .key.fn-w3 { grid-column: span 3; }
 
         .key {
             background: #2a2a2a;
             border: 1px solid #444;
-            border-radius: 4px;
+            border-radius: 0;
             padding: 12px 4px;
             font-size: 16px;
             font-family: 'Consolas', 'Monaco', monospace;
@@ -231,95 +237,81 @@
 
         <div class="keyboard-panel">
             <div class="keyboard">
-                <div class="row row-1">
-                    <button class="key modifier" data-action="bin">0b</button>
-                    <button class="key modifier" data-action="hex-prefix">0x</button>
-                    <button class="key modifier" data-action="sr">SR</button>
-                    <button class="key modifier" data-action="hex" id="hex-btn">HEX</button>
-                    <button class="key modifier" data-action="fn" id="fn-btn">FN</button>
-                    <button class="key action" data-action="del">DEL</button>
-                </div>
+                <button class="key modifier" data-action="bin">0b</button>
+                <button class="key modifier" data-action="hex-prefix">0x</button>
+                <button class="key modifier" data-action="sr">SR</button>
+                <button class="key modifier" data-action="hex" id="hex-btn">HEX</button>
+                <button class="key modifier" data-action="fn" id="fn-btn">FN</button>
+                <button class="key action wide" data-action="del">DEL</button>
+
                 <div id="main-keys">
-                    <div class="row row-hex" id="row-hex">
+                    <div class="row-hex" id="row-hex">
                         <button class="key" data-char="a">a</button>
                         <button class="key" data-char="b">b</button>
-                        <button class="key" data-char="c">c</button>
-                        <button class="key" data-char="d">d</button>
+                        <button class="key w3" data-char="c">c</button>
+                        <button class="key w3" data-char="d">d</button>
                         <button class="key" data-char="e">e</button>
                         <button class="key" data-char="f">f</button>
                     </div>
-                    <div class="row row-2">
-                        <button class="key" data-char="7">7</button>
-                        <button class="key" data-char="8">8</button>
-                        <button class="key" data-char="9">9</button>
-                        <button class="key" data-char="-">-</button>
-                        <button class="key" data-char="+">+</button>
-                        <button class="key" data-char="%">%</button>
-                        <button class="key" data-char="~">~</button>
-                    </div>
-                    <div class="row row-3">
-                        <button class="key" data-char="4">4</button>
-                        <button class="key" data-char="5">5</button>
-                        <button class="key" data-char="6">6</button>
-                        <button class="key" data-char="*">*</button>
-                        <button class="key" data-char="/">/</button>
-                        <button class="key" data-char="^">^</button>
-                        <button class="key" data-char=",">,</button>
-                    </div>
-                    <div class="row row-4">
-                        <button class="key" data-char="1">1</button>
-                        <button class="key" data-char="2">2</button>
-                        <button class="key" data-char="3">3</button>
-                        <button class="key" data-char="&">&</button>
-                        <button class="key" data-char="|">|</button>
-                        <button class="key" data-char="?">?</button>
-                        <button class="key" data-char=":">:</button>
-                    </div>
-                    <div class="row row-5">
-                        <button class="key" data-char="t">t</button>
-                        <button class="key" data-char="0">0</button>
-                        <button class="key" data-char=".">.</button>
-                        <button class="key" data-char="(">(</button>
-                        <button class="key" data-char=")">)</button>
-                        <button class="key" data-char="<">&lt;</button>
-                        <button class="key" data-char=">">&gt;</button>
-                    </div>
+                    <button class="key" data-char="7">7</button>
+                    <button class="key" data-char="8">8</button>
+                    <button class="key" data-char="9">9</button>
+                    <button class="key" data-char="-">-</button>
+                    <button class="key" data-char="+">+</button>
+                    <button class="key" data-char="%">%</button>
+                    <button class="key" data-char="~">~</button>
+
+                    <button class="key" data-char="4">4</button>
+                    <button class="key" data-char="5">5</button>
+                    <button class="key" data-char="6">6</button>
+                    <button class="key" data-char="*">*</button>
+                    <button class="key" data-char="/">/</button>
+                    <button class="key" data-char="^">^</button>
+                    <button class="key" data-char=",">,</button>
+
+                    <button class="key" data-char="1">1</button>
+                    <button class="key" data-char="2">2</button>
+                    <button class="key" data-char="3">3</button>
+                    <button class="key" data-char="&">&</button>
+                    <button class="key" data-char="|">|</button>
+                    <button class="key" data-char="?">?</button>
+                    <button class="key" data-char=":">:</button>
+
+                    <button class="key" data-char="t">t</button>
+                    <button class="key" data-char="0">0</button>
+                    <button class="key" data-char=".">.</button>
+                    <button class="key" data-char="(">(</button>
+                    <button class="key" data-char=")">)</button>
+                    <button class="key" data-char="<">&lt;</button>
+                    <button class="key" data-char=">">&gt;</button>
                 </div>
-                <div id="fn-keys" class="fn-keys">
-                    <div class="row row-fn">
-                        <button class="key" data-char="sin(">sin</button>
-                        <button class="key" data-char="cos(">cos</button>
-                        <button class="key" data-char="tan(">tan</button>
-                        <button class="key" data-char="abs(">abs</button>
-                    </div>
-                    <div class="row row-fn">
-                        <button class="key" data-char="sqrt(">sqrt</button>
-                        <button class="key" data-char="floor(">floor</button>
-                        <button class="key" data-char="ceil(">ceil</button>
-                        <button class="key" data-char="pow(">pow</button>
-                    </div>
-                    <div class="row row-fn">
-                        <button class="key" data-char="log(">log</button>
-                        <button class="key" data-char="exp(">exp</button>
-                        <button class="key" data-char="min(">min</button>
-                        <button class="key" data-char="max(">max</button>
-                    </div>
-                    <div class="row row-5">
-                        <button class="key" data-char="t">t</button>
-                        <button class="key" data-char="0">0</button>
-                        <button class="key" data-char=".">.</button>
-                        <button class="key" data-char="(">(</button>
-                        <button class="key" data-char=")">)</button>
-                        <button class="key" data-char=",">,</button>
-                        <button class="key" data-char=")">)</button>
-                    </div>
+
+                <div id="fn-keys">
+                    <button class="key fn-w4" data-char="sin(">sin</button>
+                    <button class="key fn-w3" data-char="cos(">cos</button>
+                    <button class="key fn-w3" data-char="tan(">tan</button>
+                    <button class="key fn-w4" data-char="abs(">abs</button>
+                    <button class="key fn-w4" data-char="sqrt(">sqrt</button>
+                    <button class="key fn-w3" data-char="floor(">floor</button>
+                    <button class="key fn-w3" data-char="ceil(">ceil</button>
+                    <button class="key fn-w4" data-char="pow(">pow</button>
+                    <button class="key fn-w4" data-char="log(">log</button>
+                    <button class="key fn-w3" data-char="exp(">exp</button>
+                    <button class="key fn-w3" data-char="min(">min</button>
+                    <button class="key fn-w4" data-char="max(">max</button>
+                    <button class="key" data-char="t">t</button>
+                    <button class="key" data-char="0">0</button>
+                    <button class="key" data-char=".">.</button>
+                    <button class="key" data-char="(">(</button>
+                    <button class="key" data-char=")">)</button>
+                    <button class="key" data-char=",">,</button>
+                    <button class="key" data-char=")">()</button>
                 </div>
-                <div class="row row-6">
-                    <button class="key nav" data-action="left">Left</button>
-                    <button class="key play" data-action="play" id="play-btn">Play</button>
-                    <button class="key live" data-action="live" id="live-btn">Live</button>
-                    <button class="key nav" data-action="right">Right</button>
-                </div>
+
+                <button class="key nav wide" data-action="left">Left</button>
+                <button class="key play wide" data-action="play" id="play-btn">Play</button>
+                <button class="key live" data-action="live" id="live-btn">Live</button>
+                <button class="key nav wide" data-action="right">Right</button>
             </div>
         </div>
     </div>
