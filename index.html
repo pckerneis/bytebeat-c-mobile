@@ -505,6 +505,13 @@ registerProcessor('bytebeat-processor', BytebeatProcessor);
         let audioCtx = null;
         let workletNode = null;
 
+        // Key repeat state
+        let keyRepeatTimer = null;
+        let keyRepeatInterval = null;
+        let currentRepeatAction = null;
+        const KEY_REPEAT_DELAY = 500; // ms before repeat starts
+        const KEY_REPEAT_RATE = 50;   // ms between repeats
+
         // DOM elements
         const exprBefore = document.getElementById('expr-before');
         const exprCursor = document.getElementById('expr-cursor');
@@ -1071,16 +1078,76 @@ registerProcessor('bytebeat-processor', BytebeatProcessor);
             }
         }
 
+        // Key repeat functions
+        function startKeyRepeat(action) {
+            stopKeyRepeat();
+            currentRepeatAction = action;
+            
+            // Execute immediately
+            action();
+            
+            // Start repeat after delay
+            keyRepeatTimer = setTimeout(() => {
+                keyRepeatInterval = setInterval(action, KEY_REPEAT_RATE);
+            }, KEY_REPEAT_DELAY);
+        }
+
+        function stopKeyRepeat() {
+            if (keyRepeatTimer) {
+                clearTimeout(keyRepeatTimer);
+                keyRepeatTimer = null;
+            }
+            if (keyRepeatInterval) {
+                clearInterval(keyRepeatInterval);
+                keyRepeatInterval = null;
+            }
+            currentRepeatAction = null;
+        }
+
         // Event handlers
         document.querySelectorAll('.key[data-char]').forEach(key => {
-            key.addEventListener('click', () => {
-                insertChar(key.dataset.char);
+            const char = key.dataset.char;
+            
+            // Touch events for key repeat
+            key.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                startKeyRepeat(() => insertChar(char));
+            });
+            
+            key.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                stopKeyRepeat();
+            });
+            
+            key.addEventListener('touchcancel', (e) => {
+                e.preventDefault();
+                stopKeyRepeat();
+            });
+            
+            // Mouse events (for desktop)
+            key.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                startKeyRepeat(() => insertChar(char));
+            });
+            
+            key.addEventListener('mouseup', (e) => {
+                e.preventDefault();
+                stopKeyRepeat();
+            });
+            
+            key.addEventListener('mouseleave', () => {
+                stopKeyRepeat();
             });
         });
 
         document.querySelectorAll('.key[data-action]').forEach(key => {
-            key.addEventListener('click', () => {
-                const action = key.dataset.action;
+            const action = key.dataset.action;
+            
+            // Determine which actions should repeat
+            const repeatableActions = ['del', 'left', 'right'];
+            const shouldRepeat = repeatableActions.includes(action);
+            
+            const executeAction = () => {
                 switch (action) {
                     case 'del': deleteChar(); break;
                     case 'left': moveCursor(-1); break;
@@ -1093,54 +1160,131 @@ registerProcessor('bytebeat-processor', BytebeatProcessor);
                     case 'bin': insertChar('0b'); break;
                     case 'hex-prefix': insertChar('0x'); break;
                 }
-            });
+            };
+            
+            if (shouldRepeat) {
+                // Touch events for repeatable actions
+                key.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    startKeyRepeat(executeAction);
+                });
+                
+                key.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    stopKeyRepeat();
+                });
+                
+                key.addEventListener('touchcancel', (e) => {
+                    e.preventDefault();
+                    stopKeyRepeat();
+                });
+                
+                // Mouse events for repeatable actions
+                key.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    startKeyRepeat(executeAction);
+                });
+                
+                key.addEventListener('mouseup', (e) => {
+                    e.preventDefault();
+                    stopKeyRepeat();
+                });
+                
+                key.addEventListener('mouseleave', () => {
+                    stopKeyRepeat();
+                });
+            } else {
+                // Non-repeatable actions use click
+                key.addEventListener('click', executeAction);
+            }
         });
 
         // Keyboard support for desktop
+        let physicalKeyRepeat = new Map(); // Track which keys are being held
+        
         document.addEventListener('keydown', async (e) => {
+            // Handle key repeat for physical keyboard
+            const keyId = e.key + (e.ctrlKey ? '_ctrl' : '') + (e.metaKey ? '_meta' : '');
+            
             if (e.key === 'Backspace') {
                 e.preventDefault();
-                deleteChar();
+                if (!physicalKeyRepeat.has(keyId)) {
+                    physicalKeyRepeat.set(keyId, true);
+                    startKeyRepeat(deleteChar);
+                }
             } else if (e.key === 'ArrowLeft') {
-                moveCursor(-1);
+                e.preventDefault();
+                if (!physicalKeyRepeat.has(keyId)) {
+                    physicalKeyRepeat.set(keyId, true);
+                    startKeyRepeat(() => moveCursor(-1));
+                }
             } else if (e.key === 'ArrowRight') {
-                moveCursor(1);
+                e.preventDefault();
+                if (!physicalKeyRepeat.has(keyId)) {
+                    physicalKeyRepeat.set(keyId, true);
+                    startKeyRepeat(() => moveCursor(1));
+                }
             } else if (e.key === 'Enter') {
-                togglePlay();
+                if (!e.repeat) {
+                    togglePlay();
+                }
             } else if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
                 // Copy expression
                 e.preventDefault();
-                navigator.clipboard.writeText(expression);
+                if (!e.repeat) {
+                    navigator.clipboard.writeText(expression);
+                }
             } else if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
                 // Paste at cursor
                 e.preventDefault();
-                const text = await navigator.clipboard.readText();
-                insertChar(text);
+                if (!e.repeat) {
+                    const text = await navigator.clipboard.readText();
+                    insertChar(text);
+                }
             } else if ((e.ctrlKey || e.metaKey) && e.key === 'x') {
                 // Cut expression
                 e.preventDefault();
-                navigator.clipboard.writeText(expression);
-                saveState();
-                expression = '';
-                cursorPos = 0;
-                updateDisplay();
-                liveUpdate();
-                saveExpression();
+                if (!e.repeat) {
+                    navigator.clipboard.writeText(expression);
+                    saveState();
+                    expression = '';
+                    cursorPos = 0;
+                    updateDisplay();
+                    liveUpdate();
+                    saveExpression();
+                }
             } else if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
                 // Undo
                 e.preventDefault();
-                undo();
+                if (!e.repeat) {
+                    undo();
+                }
             } else if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.shiftKey && e.key === 'Z'))) {
                 // Redo
                 e.preventDefault();
-                redo();
+                if (!e.repeat) {
+                    redo();
+                }
             } else if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
                 // Select all - move cursor to end
                 e.preventDefault();
-                cursorPos = expression.length;
-                updateDisplay();
+                if (!e.repeat) {
+                    cursorPos = expression.length;
+                    updateDisplay();
+                }
             } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) {
-                insertChar(e.key);
+                if (!physicalKeyRepeat.has(keyId)) {
+                    physicalKeyRepeat.set(keyId, true);
+                    startKeyRepeat(() => insertChar(e.key));
+                }
+            }
+        });
+        
+        document.addEventListener('keyup', (e) => {
+            const keyId = e.key + (e.ctrlKey ? '_ctrl' : '') + (e.metaKey ? '_meta' : '');
+            if (physicalKeyRepeat.has(keyId)) {
+                physicalKeyRepeat.delete(keyId);
+                stopKeyRepeat();
             }
         });
 
