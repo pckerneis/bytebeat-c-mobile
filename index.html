@@ -684,6 +684,15 @@ registerProcessor('bytebeat-processor', BytebeatProcessor);
             { title: 'untitled', author: 'tejeez', sampleRate: 8000, code: '((-t&4095)*(255&t*(t&t>>13))>>12)+(127&t*(234&t>>8&t>>3)>>(3&t>>14))' },
             { title: 'Space Invaders vs Pong', author: 'visy', sampleRate: 8000, code: 't*(t>>((t>>9|t>>8))&63&t>>4)' },
 
+            // Source: https://www.youtube.com/watch?v=qlrs2Vorw2Y
+            { title: 'untitled', author: 'viznut', sampleRate: 8000, code: '(t>>6|t|t>>(t>>16))*10+((t>>11)&7)' },
+            { title: 'untitled', author: 'pyryp', sampleRate: 8000, code: 'v=(v>>1)+(v>>4)+t*(((t>>16)|(t>>6))&(69&(t>>9)))' },
+            { title: 'untitled', author: 'red-', sampleRate: 8000, code: '(t|(t>>9|t>>7))*t&(t>>11|t>>9)' },
+            { title: 'untitled', author: 'miiro', sampleRate: 8000, code: 't*5&(t>>7)|t*3&(t*4>>10)' },
+            { title: 'untitled', author: 'viznut', sampleRate: 8000, code: '(t>>7|t|t>>6)*10+4*(t&t>>13|t>>6)' },
+            { title: 'untitled', author: 'shurk', sampleRate: 8000, code: '((t&4096)?((t*(t^t%255)|(t>>4))>>1):(t>>3)|((t&8192)?t<<2:t))' },
+            { title: 'Lost in Space', author: 'xpansive', sampleRate: 8000, code: '((t*(t>>8|t>>9)&46&t>>8))^(t&t>>13|t>>6)' },
+
             // Source: https://www.youtube.com/watch?v=V4GfkFbDojc
             { title: 'Crazy Grooby Beats', author: 'Gabriel Miceli', sampleRate: 32000, code: 'a=t-2048,((t&t>>6)&(t*(t>>((t&65535)>>12))))+((t*3/4&t>>12)&127)+(t*(a>>7&a>>8&a>>9&16)>>t/64)' },
             { title: 'Noise Maker', author: 'Gabriel Miceli', sampleRate: 11025, code: 'i=t&8191,(((t*((t>>9^((t>>9)-1)^1)%13)&255)/2)+((((t>>3|t<<(t>>12&2))*(i<4096)+(t>>4|t*(t^t+t/256))*(i>4095)))&255)/2)*(2+(t>>16))' },
