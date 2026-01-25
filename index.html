@@ -352,73 +352,125 @@ class BytebeatProcessor extends AudioWorkletProcessor {
         };
     }
 
+    // Typed value helpers: {v: value, i: isInteger}
+    I(n) { return {v: Math.trunc(n), i: true}; }
+    F(n) { return {v: n, i: false}; }
+    pop(stack) { const x = stack.pop(); return x || {v: 0, i: true}; }
+    val(x) { return x.v; }
+
     evalRPN(t) {
         if (this.rpn.length === 0) return 0;
         const stack = [];
         for (const token of this.rpn) {
-            if (typeof token === 'number') {
+            // Typed number from parser: {v, i}
+            if (typeof token === 'object' && 'v' in token) {
                 stack.push(token);
             } else if (token === 't') {
-                stack.push(t);
+                stack.push(this.I(t));
             } else {
-                let a, b, c;
+                let a, b, c, av, bv, cv, bothInt;
                 switch (token) {
-                    case '+': b = stack.pop() || 0; a = stack.pop() || 0; stack.push(a + b); break;
-                    case '-': b = stack.pop() || 0; a = stack.pop() || 0; stack.push(a - b); break;
-                    case '*': b = stack.pop() || 0; a = stack.pop() || 0; stack.push(a * b); break;
-                    case '/': b = stack.pop() || 0; a = stack.pop() || 0; stack.push(b !== 0 ? Math.trunc(a / b) : 0); break;
-                    case '%': b = stack.pop() || 0; a = stack.pop() || 0; stack.push(b !== 0 ? a % b : 0); break;
-                    case '&': b = stack.pop() || 0; a = stack.pop() || 0; stack.push(a & b); break;
-                    case '|': b = stack.pop() || 0; a = stack.pop() || 0; stack.push(a | b); break;
-                    case '^': b = stack.pop() || 0; a = stack.pop() || 0; stack.push(a ^ b); break;
-                    case '~': a = stack.pop() || 0; stack.push(~a); break;
-                    case '<<': b = stack.pop() || 0; a = stack.pop() || 0; stack.push(a << b); break;
-                    case '>>': b = stack.pop() || 0; a = stack.pop() || 0; stack.push(a >> b); break;
-                    case '<': b = stack.pop() || 0; a = stack.pop() || 0; stack.push(a < b ? 1 : 0); break;
-                    case '>': b = stack.pop() || 0; a = stack.pop() || 0; stack.push(a > b ? 1 : 0); break;
-                    case '<=': b = stack.pop() || 0; a = stack.pop() || 0; stack.push(a <= b ? 1 : 0); break;
-                    case '>=': b = stack.pop() || 0; a = stack.pop() || 0; stack.push(a >= b ? 1 : 0); break;
-                    case '==': b = stack.pop() || 0; a = stack.pop() || 0; stack.push(a === b ? 1 : 0); break;
-                    case '!=': b = stack.pop() || 0; a = stack.pop() || 0; stack.push(a !== b ? 1 : 0); break;
-                    case '?:': c = stack.pop() || 0; b = stack.pop() || 0; a = stack.pop() || 0; stack.push(a ? b : c); break;
-                    // Trig
-                    case 'sin': a = stack.pop() || 0; stack.push(Math.sin(a)); break;
-                    case 'cos': a = stack.pop() || 0; stack.push(Math.cos(a)); break;
-                    case 'tan': a = stack.pop() || 0; stack.push(Math.tan(a)); break;
-                    case 'asin': a = stack.pop() || 0; stack.push(Math.asin(a)); break;
-                    case 'acos': a = stack.pop() || 0; stack.push(Math.acos(a)); break;
-                    case 'atan': a = stack.pop() || 0; stack.push(Math.atan(a)); break;
-                    // Hyperbolic
-                    case 'sinh': a = stack.pop() || 0; stack.push(Math.sinh(a)); break;
-                    case 'cosh': a = stack.pop() || 0; stack.push(Math.cosh(a)); break;
-                    case 'tanh': a = stack.pop() || 0; stack.push(Math.tanh(a)); break;
-                    // Roots & powers
-                    case 'sqrt': a = stack.pop() || 0; stack.push(Math.sqrt(a)); break;
-                    case 'cbrt': a = stack.pop() || 0; stack.push(Math.cbrt(a)); break;
-                    case 'pow': b = stack.pop() || 0; a = stack.pop() || 0; stack.push(Math.pow(a, b)); break;
-                    case 'exp': a = stack.pop() || 0; stack.push(Math.exp(a)); break;
-                    // Logs
-                    case 'log': a = stack.pop() || 0; stack.push(Math.log(a)); break;
-                    case 'log10': a = stack.pop() || 0; stack.push(Math.log10(a)); break;
-                    // Rounding & conversion
-                    case 'floor': a = stack.pop() || 0; stack.push(Math.floor(a)); break;
-                    case 'ceil': a = stack.pop() || 0; stack.push(Math.ceil(a)); break;
-                    case 'round': a = stack.pop() || 0; stack.push(Math.round(a)); break;
-                    case 'int': a = stack.pop() || 0; stack.push(Math.trunc(a)); break;
-                    case 'float': a = stack.pop() || 0; stack.push(a); break;
-                    // Misc
-                    case 'abs': case 'fabs': a = stack.pop() || 0; stack.push(Math.abs(a)); break;
-                    case 'min': b = stack.pop() || 0; a = stack.pop() || 0; stack.push(Math.min(a, b)); break;
-                    case 'max': b = stack.pop() || 0; a = stack.pop() || 0; stack.push(Math.max(a, b)); break;
-                    case 'fmod': b = stack.pop() || 0; a = stack.pop() || 0; stack.push(b !== 0 ? a - Math.trunc(a/b)*b : 0); break;
-                    case 'modf': a = stack.pop() || 0; stack.push(a - Math.trunc(a)); break;
-                    // Constants
-                    case 'PI': stack.push(Math.PI); break;
-                    case 'E': stack.push(Math.E); break;
+                    // Arithmetic - type depends on operands
+                    case '+':
+                        b = this.pop(stack); a = this.pop(stack);
+                        bothInt = a.i && b.i;
+                        stack.push(bothInt ? this.I(a.v + b.v) : this.F(a.v + b.v));
+                        break;
+                    case '-':
+                        b = this.pop(stack); a = this.pop(stack);
+                        bothInt = a.i && b.i;
+                        stack.push(bothInt ? this.I(a.v - b.v) : this.F(a.v - b.v));
+                        break;
+                    case '*':
+                        b = this.pop(stack); a = this.pop(stack);
+                        bothInt = a.i && b.i;
+                        stack.push(bothInt ? this.I(a.v * b.v) : this.F(a.v * b.v));
+                        break;
+                    case '/':
+                        b = this.pop(stack); a = this.pop(stack);
+                        bothInt = a.i && b.i;
+                        if (b.v === 0) { stack.push(this.I(0)); }
+                        else if (bothInt) { stack.push(this.I(Math.trunc(a.v / b.v))); }
+                        else { stack.push(this.F(a.v / b.v)); }
+                        break;
+                    case '%':
+                        b = this.pop(stack); a = this.pop(stack);
+                        bothInt = a.i && b.i;
+                        if (b.v === 0) { stack.push(this.I(0)); }
+                        else if (bothInt) { stack.push(this.I(a.v % b.v)); }
+                        else { stack.push(this.F(a.v - Math.trunc(a.v / b.v) * b.v)); }
+                        break;
+                    // Bitwise - always integer
+                    case '&': b = this.pop(stack); a = this.pop(stack); stack.push(this.I(a.v & b.v)); break;
+                    case '|': b = this.pop(stack); a = this.pop(stack); stack.push(this.I(a.v | b.v)); break;
+                    case '^': b = this.pop(stack); a = this.pop(stack); stack.push(this.I(a.v ^ b.v)); break;
+                    case '~': a = this.pop(stack); stack.push(this.I(~a.v)); break;
+                    case '<<': b = this.pop(stack); a = this.pop(stack); stack.push(this.I(a.v << b.v)); break;
+                    case '>>': b = this.pop(stack); a = this.pop(stack); stack.push(this.I(a.v >> b.v)); break;
+                    // Comparison - always integer (0 or 1)
+                    case '<': b = this.pop(stack); a = this.pop(stack); stack.push(this.I(a.v < b.v ? 1 : 0)); break;
+                    case '>': b = this.pop(stack); a = this.pop(stack); stack.push(this.I(a.v > b.v ? 1 : 0)); break;
+                    case '<=': b = this.pop(stack); a = this.pop(stack); stack.push(this.I(a.v <= b.v ? 1 : 0)); break;
+                    case '>=': b = this.pop(stack); a = this.pop(stack); stack.push(this.I(a.v >= b.v ? 1 : 0)); break;
+                    case '==': b = this.pop(stack); a = this.pop(stack); stack.push(this.I(a.v === b.v ? 1 : 0)); break;
+                    case '!=': b = this.pop(stack); a = this.pop(stack); stack.push(this.I(a.v !== b.v ? 1 : 0)); break;
+                    // Ternary - preserves type of selected branch
+                    case '?:':
+                        c = this.pop(stack); b = this.pop(stack); a = this.pop(stack);
+                        stack.push(a.v ? b : c);
+                        break;
+                    // Trig - always float
+                    case 'sin': a = this.pop(stack); stack.push(this.F(Math.sin(a.v))); break;
+                    case 'cos': a = this.pop(stack); stack.push(this.F(Math.cos(a.v))); break;
+                    case 'tan': a = this.pop(stack); stack.push(this.F(Math.tan(a.v))); break;
+                    case 'asin': a = this.pop(stack); stack.push(this.F(Math.asin(a.v))); break;
+                    case 'acos': a = this.pop(stack); stack.push(this.F(Math.acos(a.v))); break;
+                    case 'atan': a = this.pop(stack); stack.push(this.F(Math.atan(a.v))); break;
+                    // Hyperbolic - always float
+                    case 'sinh': a = this.pop(stack); stack.push(this.F(Math.sinh(a.v))); break;
+                    case 'cosh': a = this.pop(stack); stack.push(this.F(Math.cosh(a.v))); break;
+                    case 'tanh': a = this.pop(stack); stack.push(this.F(Math.tanh(a.v))); break;
+                    // Roots & powers - always float
+                    case 'sqrt': a = this.pop(stack); stack.push(this.F(Math.sqrt(a.v))); break;
+                    case 'cbrt': a = this.pop(stack); stack.push(this.F(Math.cbrt(a.v))); break;
+                    case 'pow': b = this.pop(stack); a = this.pop(stack); stack.push(this.F(Math.pow(a.v, b.v))); break;
+                    case 'exp': a = this.pop(stack); stack.push(this.F(Math.exp(a.v))); break;
+                    // Logs - always float
+                    case 'log': a = this.pop(stack); stack.push(this.F(Math.log(a.v))); break;
+                    case 'log10': a = this.pop(stack); stack.push(this.F(Math.log10(a.v))); break;
+                    // Rounding - returns integer
+                    case 'floor': a = this.pop(stack); stack.push(this.I(Math.floor(a.v))); break;
+                    case 'ceil': a = this.pop(stack); stack.push(this.I(Math.ceil(a.v))); break;
+                    case 'round': a = this.pop(stack); stack.push(this.I(Math.round(a.v))); break;
+                    // Type conversion
+                    case 'int': a = this.pop(stack); stack.push(this.I(a.v)); break;
+                    case 'float': a = this.pop(stack); stack.push(this.F(a.v)); break;
+                    // Misc - abs preserves type, fabs returns float
+                    case 'abs': a = this.pop(stack); stack.push(a.i ? this.I(Math.abs(a.v)) : this.F(Math.abs(a.v))); break;
+                    case 'fabs': a = this.pop(stack); stack.push(this.F(Math.abs(a.v))); break;
+                    case 'min':
+                        b = this.pop(stack); a = this.pop(stack);
+                        bothInt = a.i && b.i;
+                        stack.push(bothInt ? this.I(Math.min(a.v, b.v)) : this.F(Math.min(a.v, b.v)));
+                        break;
+                    case 'max':
+                        b = this.pop(stack); a = this.pop(stack);
+                        bothInt = a.i && b.i;
+                        stack.push(bothInt ? this.I(Math.max(a.v, b.v)) : this.F(Math.max(a.v, b.v)));
+                        break;
+                    case 'fmod':
+                        b = this.pop(stack); a = this.pop(stack);
+                        stack.push(this.F(b.v !== 0 ? a.v - Math.trunc(a.v / b.v) * b.v : 0));
+                        break;
+                    case 'modf': a = this.pop(stack); stack.push(this.F(a.v - Math.trunc(a.v))); break;
+                    // Constants - float
+                    case 'PI': stack.push(this.F(Math.PI)); break;
+                    case 'E': stack.push(this.F(Math.E)); break;
                 }
             }
         }
-        return (stack.pop() || 0) & 255;
+        const result = this.pop(stack);
+        return result.v & 255;
     }
 
     process(inputs, outputs) {
@@ -609,29 +661,31 @@ registerProcessor('bytebeat-processor', BytebeatProcessor);
                     continue;
                 }
 
-                // Numbers (decimal, hex, binary)
+                // Numbers (decimal, hex, binary) - track if integer or float
                 if (/[0-9]/.test(c) || (c === '0' && (expr[i+1] === 'x' || expr[i+1] === 'b'))) {
                     let num = '';
+                    let isInt = true;
                     if (c === '0' && expr[i+1] === 'x') {
-                        // Hex
+                        // Hex - always integer
                         i += 2;
                         while (i < expr.length && /[0-9a-fA-F]/.test(expr[i])) {
                             num += expr[i++];
                         }
-                        tokens.push({ type: 'num', value: parseInt(num, 16) || 0 });
+                        tokens.push({ type: 'num', value: parseInt(num, 16) || 0, isInt: true });
                     } else if (c === '0' && expr[i+1] === 'b') {
-                        // Binary
+                        // Binary - always integer
                         i += 2;
                         while (i < expr.length && /[01]/.test(expr[i])) {
                             num += expr[i++];
                         }
-                        tokens.push({ type: 'num', value: parseInt(num, 2) || 0 });
+                        tokens.push({ type: 'num', value: parseInt(num, 2) || 0, isInt: true });
                     } else {
-                        // Decimal
+                        // Decimal - integer unless contains '.'
                         while (i < expr.length && /[0-9.]/.test(expr[i])) {
+                            if (expr[i] === '.') isInt = false;
                             num += expr[i++];
                         }
-                        tokens.push({ type: 'num', value: parseFloat(num) || 0 });
+                        tokens.push({ type: 'num', value: parseFloat(num) || 0, isInt: isInt });
                     }
                     continue;
                 }
@@ -873,18 +927,18 @@ registerProcessor('bytebeat-processor', BytebeatProcessor);
                 if (peek() && peek().value === '-') {
                     consume();
                     const right = parseUnary();
-                    return [0, ...right, '-'];
+                    return [{v: 0, i: true}, ...right, '-'];
                 }
                 return parsePrimary();
             }
 
             function parsePrimary() {
                 const tok = peek();
-                if (!tok) return [0];
+                if (!tok) return [{v: 0, i: true}];
 
                 if (tok.type === 'num') {
                     consume();
-                    return [tok.value];
+                    return [{v: tok.value, i: tok.isInt}];
                 }
 
                 if (tok.type === 't') {
@@ -920,13 +974,13 @@ registerProcessor('bytebeat-processor', BytebeatProcessor);
                 }
 
                 consume();
-                return [0];
+                return [{v: 0, i: true}];
             }
 
             try {
                 return parseTernary();
             } catch (e) {
-                return [0];
+                return [{v: 0, i: true}];
             }
         }
 
