@@ -216,6 +216,141 @@
             background: #3a3a5a;
         }
 
+        /* Library Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #1a1a1a;
+            border: 1px solid #444;
+            border-radius: 8px;
+            max-width: 90%;
+            max-height: 80%;
+            width: 500px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-header {
+            padding: 15px;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            font-size: 18px;
+            margin: 0;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: #e0e0e0;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+        }
+
+        .modal-body {
+            padding: 15px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .library-item {
+            background: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 4px;
+            padding: 10px;
+            margin-bottom: 10px;
+            cursor: pointer;
+        }
+
+        .library-item:hover {
+            background: #333;
+            border-color: #555;
+        }
+
+        .library-item:active {
+            background: #3a3a3a;
+        }
+
+        .library-item-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #4a9eff;
+        }
+
+        .library-item-info {
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 5px;
+        }
+
+        .library-item-code {
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 11px;
+            color: #aaa;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .library-tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 10px;
+        }
+
+        .library-tab {
+            background: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 4px;
+            padding: 8px 12px;
+            font-size: 14px;
+            color: #e0e0e0;
+            cursor: pointer;
+            flex: 1;
+        }
+
+        .library-tab.active {
+            background: #3a6090;
+            border-color: #4a80b0;
+        }
+
+        .saved-item-delete {
+            background: #5a2a2a;
+            border: 1px solid #7a3a3a;
+            border-radius: 3px;
+            padding: 4px 8px;
+            font-size: 11px;
+            color: #e0e0e0;
+            cursor: pointer;
+            float: right;
+        }
+
+        .saved-item-delete:active {
+            background: #7a3a3a;
+        }
+
             </style>
 </head>
 <body>
@@ -223,7 +358,9 @@
         <div class="toolbar">
             <button id="undo-btn" disabled>Undo</button>
             <button id="redo-btn" disabled>Redo</button>
+            <button id="library-btn">Library</button>
             <span class="spacer"></span>
+            <button id="save-btn">Save</button>
             <button id="copy-btn">Copy</button>
             <button id="paste-btn">Paste</button>
         </div>
@@ -321,10 +458,27 @@
                     <button class="key" data-char=")">)</button>
                 </div>
 
-                <button class="key nav wide" data-action="left">Left</button>
+                <button class="key nav wide" data-action="left">←</button>
                 <button class="key play wide" data-action="play" id="play-btn">Play</button>
                 <button class="key live" data-action="live" id="live-btn">Live</button>
-                <button class="key nav wide" data-action="right">Right</button>
+                <button class="key nav wide" data-action="right">→</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Library Modal -->
+    <div class="modal" id="library-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Sound Library</h2>
+                <button class="modal-close" id="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="library-tabs">
+                    <button class="library-tab active" id="tab-presets">Presets</button>
+                    <button class="library-tab" id="tab-saved">Saved</button>
+                </div>
+                <div id="library-list"></div>
             </div>
         </div>
     </div>
@@ -517,6 +671,41 @@ class BytebeatProcessor extends AudioWorkletProcessor {
 registerProcessor('bytebeat-processor', BytebeatProcessor);
 `;
 
+        // Predefined sound library
+        const presetLibrary = [
+            { title: '(empty)', author: '-', sampleRate: 8000, code: '' },
+
+            // Source: https://www.youtube.com/watch?v=GtQdIYUtAHg
+            { title: 'untitled', author: 'viznut', sampleRate: 8000, code: 't*((t>>12|t>>8)&63&t>>4)' },
+            { title: 'untitled', author: 'tejeez', sampleRate: 8000, code: 't*((t>>5|t>>8))>>(t>>16)' },
+            { title: 'untitled', author: 'visy', sampleRate: 8000, code: 't*((t>>9|t>>13)&25&t>>6)' },
+            { title: 'untitled', author: 'tejeez', sampleRate: 8000, code: 't*((t>>11&t>>8&123&t>>3)' },
+            { title: 'untitled', author: 'visy', sampleRate: 8000, code: '(t*(t>>8*(t>>15|t>>8)&(20|(t>>19)*5>>t|t>>3))' },
+            { title: 'untitled', author: 'tejeez', sampleRate: 8000, code: '((-t&4095)*(255&t*(t&t>>13))>>12)+(127&t*(234&t>>8&t>>3)>>(3&t>>14))' },
+            { title: 'Space Invaders vs Pong', author: 'visy', sampleRate: 8000, code: 't*(t>>((t>>9|t>>8))&63&t>>4)' },
+
+            // Source: https://www.youtube.com/watch?v=V4GfkFbDojc
+            { title: 'Crazy Grooby Beats', author: 'Gabriel Miceli', sampleRate: 32000, code: 'a=t-2048,((t&t>>6)&(t*(t>>((t&65535)>>12))))+((t*3/4&t>>12)&127)+(t*(a>>7&a>>8&a>>9&16)>>t/64)' },
+            { title: 'Noise Maker', author: 'Gabriel Miceli', sampleRate: 11025, code: 'i=t&8191,(((t*((t>>9^((t>>9)-1)^1)%13)&255)/2)+((((t>>3|t<<(t>>12&2))*(i<4096)+(t>>4|t*(t^t+t/256))*(i>4095)))&255)/2)*(2+(t>>16))' },
+            { title: 'Crude Sinewave Dubstep', author: 'Gabriel Miceli', sampleRate: 44100, code: 'd=(t*(t&t>>12)*8/11025)|0,((d&16)/8-1)*(d*(d^15)+d+127)' },
+            { title: 'The Rhythm', author: 'Gabriel Miceli', sampleRate: 8000, code: 'a=t-256,((44*(t/256-28|3)|t*8&t>>11&t>>5|t*(a>>3&a>>4&a>>5&64)>>t/16)/2&127)+(((t^t+t/256)&255)/(5-(t>>17&3))/2&127)' },
+            { title: 'Crazy Grooby Beats 2', author: 'Gabriel Miceli', sampleRate: 8000, code: 'd=t>>12&1,h=(t>>9)+4,(t*t*(t&255)*d/156+(t*(t^15)+t)*((h|t/2048+1&127)-h)/64&127-d*((t>>5&127)*2/3+32))' },
+            { title: 'Techno', author: 'Gabriel Miceli', sampleRate: 11025, code: '(t*(((t/10|0)^(t/10|0)-1280)%11)/2&127)+(t*(((t/640|0)^(t/640|0)-2)%13)/2&127)' },
+            { title: 'New Sawtooth Music', author: 'Gabriel Miceli', sampleRate: 8000, code: 't*((t-2296&t)>>11)' },
+            { title: 'New Sawtooth Music (again) Remix', author: 'Gabriel Miceli', sampleRate: 8000, code: 'j=(t-41024&t+1024)>>11&255,k=t&16383,(t*(j&255)/2&127)+((100000/(t&4095))/4&63)+((int(k/(k>>7)-136)/8)&((32*(1+(j>7))-1)))' },
+            { title: 'Deep Tones', author: 'Gabriel Miceli', sampleRate: 8000, code: 't*(t*287/256&t>>11&31)' },
+            { title: 'Shapeshifter Tune', author: 'Gabriel Miceli', sampleRate: 8000, code: 'y=t*(t>>10&42),y*2|y+t/64' },
+            { title: 'Now this actually sounds pretty cool.', author: 'Gabriel Miceli', sampleRate: 8000, code: 'd=t*465/(43+6*(t>>15&3^1)),((d/4&t>>6)+d/2&127)+(d/6&127)' },
+            { title: 'Song by Gabriel Miceli', author: 'Gabriel Miceli', sampleRate: 8000, code: '(-1-t|t+t/256)-(-(t-(t>>8))|t+(t>>8))' },
+            { title: 'Song by Gabriel Miceli #2', author: 'Gabriel Miceli', sampleRate: 8000, code: '(t&t+t/256)-t*(t>>15)&64' },
+            { title: 'Alien Disco', author: 'unknown', sampleRate: 32000, code: 'd=t>>15&t>>11,e=t>>6,t*(d&1&e)+t*(d&4&e)/2+t*(d&8&e)*3/4+t*(1-((d&(t>>13)+1)&1))+t*(t+t^15*t)*(t>>9&t>>11&4)/1024' },
+            { title: 'Moon Scanner Generalization', author: 'viznut', sampleRate: 8000, code: '((t>>5&t)-(t>>5)+(t>>5&t))+(t*((t>>14)&14))' },
+            { title: 'Another attempt at melody construction', author: 'viznut', sampleRate: 8000, code: '(t*((3+(1^t>>10&5))*(5+(3&t>>14))))>>(t>>8&3)' },
+            { title: 'Song by tejeez', author: 'tejeez', sampleRate: 8000, code: '(~t>>2)*((127&t*(7&t>>10))<(245&t*(2+(5&t>>14))))' },
+            { title: 'Song by skurk', author: 'skurk', sampleRate: 8000, code: 't*(t>>((t&4096)?((t*t)/4096):(t/4096)))|(t<<(t/256))|(t>>4)' },
+            { title: 'all \'board the ole steam boat', author: 'Noah Lovotti', sampleRate: 8000, code: 'v="4568"[t>>11&3],w=(t>>5|t>>v^sin(t/8/(v/(((t>>12&t>>14)&8)+((t>>14|t>>11)&1))))*29-100),w+(v*((t*v/7*4&t>>11)|w))' }
+        ];
+
         // State - load expression from localStorage
         let expression = localStorage.getItem('bytebeat-expr') || '';
         let cursorPos = expression.length;
@@ -530,6 +719,8 @@ registerProcessor('bytebeat-processor', BytebeatProcessor);
         let liveMode = false;
         let audioCtx = null;
         let workletNode = null;
+        let savedSongs = JSON.parse(localStorage.getItem('bytebeat-saved') || '[]');
+        let currentLibraryTab = 'presets';
 
         // Key repeat state
         let keyRepeatTimer = null;
@@ -552,6 +743,13 @@ registerProcessor('bytebeat-processor', BytebeatProcessor);
         const redoBtn = document.getElementById('redo-btn');
         const copyBtn = document.getElementById('copy-btn');
         const pasteBtn = document.getElementById('paste-btn');
+        const libraryBtn = document.getElementById('library-btn');
+        const saveBtn = document.getElementById('save-btn');
+        const libraryModal = document.getElementById('library-modal');
+        const modalClose = document.getElementById('modal-close');
+        const libraryList = document.getElementById('library-list');
+        const tabPresets = document.getElementById('tab-presets');
+        const tabSaved = document.getElementById('tab-saved');
 
         // Save expression to localStorage
         function saveExpression() {
@@ -687,6 +885,116 @@ registerProcessor('bytebeat-processor', BytebeatProcessor);
             if (isPlaying) {
                 stopAudio();
                 startAudio();
+            }
+        }
+
+        // Library functions
+        function openLibrary() {
+            libraryModal.classList.add('active');
+            renderLibrary();
+        }
+
+        function closeLibrary() {
+            libraryModal.classList.remove('active');
+        }
+
+        function switchLibraryTab(tab) {
+            currentLibraryTab = tab;
+            tabPresets.classList.toggle('active', tab === 'presets');
+            tabSaved.classList.toggle('active', tab === 'saved');
+            renderLibrary();
+        }
+
+        function renderLibrary() {
+            libraryList.innerHTML = '';
+            const items = currentLibraryTab === 'presets' ? presetLibrary : savedSongs;
+            
+            items.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = 'library-item';
+                
+                const title = document.createElement('div');
+                title.className = 'library-item-title';
+                title.textContent = item.title;
+                
+                const info = document.createElement('div');
+                info.className = 'library-item-info';
+                info.textContent = `${item.author || 'Unknown'} • ${item.sampleRate}Hz`;
+                
+                const code = document.createElement('div');
+                code.className = 'library-item-code';
+                code.textContent = item.code;
+                
+                div.appendChild(title);
+                div.appendChild(info);
+                div.appendChild(code);
+                
+                if (currentLibraryTab === 'saved') {
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'saved-item-delete';
+                    deleteBtn.textContent = 'Delete';
+                    deleteBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        deleteSavedSong(index);
+                    };
+                    title.appendChild(deleteBtn);
+                }
+                
+                div.onclick = () => loadSong(item);
+                libraryList.appendChild(div);
+            });
+        }
+
+        function loadSong(song) {
+            saveState();
+            expression = song.code;
+            cursorPos = expression.length;
+            
+            // Set sample rate
+            const srIdx = sampleRates.indexOf(song.sampleRate);
+            if (srIdx !== -1) {
+                srIndex = srIdx;
+            }
+            
+            updateDisplay();
+            saveExpression();
+            closeLibrary();
+            
+            // If playing, restart with new expression
+            if (isPlaying) {
+                stopAudio();
+                startAudio();
+            }
+        }
+
+        function saveCurrentSong() {
+            if (!expression.trim()) {
+                alert('Cannot save empty expression');
+                return;
+            }
+            
+            const title = prompt('Enter a title for this song:');
+            if (!title) return;
+            
+            const author = prompt('Enter author name (optional):') || 'User';
+            
+            const song = {
+                title: title,
+                author: author,
+                sampleRate: sampleRates[srIndex],
+                code: expression
+            };
+            
+            savedSongs.push(song);
+            localStorage.setItem('bytebeat-saved', JSON.stringify(savedSongs));
+            alert('Song saved!');
+        }
+
+        function deleteSavedSong(index) {
+            if (confirm('Delete this saved song?')) {
+                savedSongs.splice(index, 1);
+                localStorage.setItem('bytebeat-saved', JSON.stringify(savedSongs));
+                renderLibrary();
             }
         }
 
@@ -1371,6 +1679,18 @@ registerProcessor('bytebeat-processor', BytebeatProcessor);
             const text = await navigator.clipboard.readText();
             insertChar(text);
         });
+        libraryBtn.addEventListener('click', openLibrary);
+        saveBtn.addEventListener('click', saveCurrentSong);
+
+        // Library modal handlers
+        modalClose.addEventListener('click', closeLibrary);
+        libraryModal.addEventListener('click', (e) => {
+            if (e.target === libraryModal) {
+                closeLibrary();
+            }
+        });
+        tabPresets.addEventListener('click', () => switchLibraryTab('presets'));
+        tabSaved.addEventListener('click', () => switchLibraryTab('saved'));
 
         // Initial display
         updateDisplay();
