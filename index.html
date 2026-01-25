@@ -491,9 +491,9 @@ class BytebeatProcessor extends AudioWorkletProcessor {
 registerProcessor('bytebeat-processor', BytebeatProcessor);
 `;
 
-        // State
-        let expression = '';
-        let cursorPos = 0;
+        // State - load expression from localStorage
+        let expression = localStorage.getItem('bytebeat-expr') || '';
+        let cursorPos = expression.length;
         let undoStack = [];
         let redoStack = [];
         let sampleRates = [8000, 11025, 16000, 22050, 32000, 44100, 48000];
@@ -520,6 +520,11 @@ registerProcessor('bytebeat-processor', BytebeatProcessor);
         const copyBtn = document.getElementById('copy-btn');
         const pasteBtn = document.getElementById('paste-btn');
 
+        // Save expression to localStorage
+        function saveExpression() {
+            localStorage.setItem('bytebeat-expr', expression);
+        }
+
         // Save state for undo
         function saveState() {
             undoStack.push({ expression, cursorPos });
@@ -536,6 +541,7 @@ registerProcessor('bytebeat-processor', BytebeatProcessor);
                 updateDisplay();
                 updateUndoRedoButtons();
                 liveUpdate();
+                saveExpression();
             }
         }
 
@@ -548,6 +554,7 @@ registerProcessor('bytebeat-processor', BytebeatProcessor);
                 updateDisplay();
                 updateUndoRedoButtons();
                 liveUpdate();
+                saveExpression();
             }
         }
 
@@ -589,6 +596,7 @@ registerProcessor('bytebeat-processor', BytebeatProcessor);
             cursorPos += char.length;
             updateDisplay();
             liveUpdate();
+            saveExpression();
         }
 
         // Delete character before cursor
@@ -599,6 +607,7 @@ registerProcessor('bytebeat-processor', BytebeatProcessor);
                 cursorPos--;
                 updateDisplay();
                 liveUpdate();
+                saveExpression();
             }
         }
 
@@ -1116,6 +1125,7 @@ registerProcessor('bytebeat-processor', BytebeatProcessor);
                 cursorPos = 0;
                 updateDisplay();
                 liveUpdate();
+                saveExpression();
             } else if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
                 // Undo
                 e.preventDefault();
