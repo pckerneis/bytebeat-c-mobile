@@ -287,25 +287,38 @@
                 </div>
 
                 <div id="fn-keys">
-                    <button class="key fn-w4" data-char="sin(">sin</button>
-                    <button class="key fn-w3" data-char="cos(">cos</button>
-                    <button class="key fn-w3" data-char="tan(">tan</button>
-                    <button class="key fn-w4" data-char="abs(">abs</button>
-                    <button class="key fn-w4" data-char="sqrt(">sqrt</button>
-                    <button class="key fn-w3" data-char="floor(">floor</button>
-                    <button class="key fn-w3" data-char="ceil(">ceil</button>
-                    <button class="key fn-w4" data-char="pow(">pow</button>
-                    <button class="key fn-w4" data-char="log(">log</button>
-                    <button class="key fn-w3" data-char="exp(">exp</button>
-                    <button class="key fn-w3" data-char="min(">min</button>
-                    <button class="key fn-w4" data-char="max(">max</button>
-                    <button class="key" data-char="t">t</button>
-                    <button class="key" data-char="0">0</button>
-                    <button class="key" data-char=".">.</button>
+                    <!-- Trig -->
+                    <button class="key" data-char="sin(">sin</button>
+                    <button class="key" data-char="cos(">cos</button>
+                    <button class="key" data-char="tan(">tan</button>
+                    <button class="key" data-char="asin(">asin</button>
+                    <button class="key" data-char="acos(">acos</button>
+                    <button class="key" data-char="atan(">atan</button>
+                    <button class="key" data-char="PI">PI</button>
+                    <!-- Hyperbolic -->
+                    <button class="key" data-char="sinh(">sinh</button>
+                    <button class="key" data-char="cosh(">cosh</button>
+                    <button class="key" data-char="tanh(">tanh</button>
+                    <button class="key" data-char="sqrt(">sqrt</button>
+                    <button class="key" data-char="cbrt(">cbrt</button>
+                    <button class="key" data-char="pow(">pow</button>
+                    <button class="key" data-char="E">E</button>
+                    <!-- Logs & exp -->
+                    <button class="key" data-char="log(">log</button>
+                    <button class="key" data-char="log10(">lg10</button>
+                    <button class="key" data-char="exp(">exp</button>
+                    <button class="key" data-char="fabs(">fabs</button>
+                    <button class="key" data-char="fmod(">fmod</button>
+                    <button class="key" data-char="modf(">modf</button>
                     <button class="key" data-char="(">(</button>
+                    <!-- Rounding -->
+                    <button class="key" data-char="floor(">flr</button>
+                    <button class="key" data-char="ceil(">ceil</button>
+                    <button class="key" data-char="round(">rnd</button>
+                    <button class="key" data-char="int(">int</button>
+                    <button class="key" data-char="min(">min</button>
+                    <button class="key" data-char="max(">max</button>
                     <button class="key" data-char=")">)</button>
-                    <button class="key" data-char=",">,</button>
-                    <button class="key" data-char=")">()</button>
                 </div>
 
                 <button class="key nav wide" data-action="left">Left</button>
@@ -368,18 +381,40 @@ class BytebeatProcessor extends AudioWorkletProcessor {
                     case '==': b = stack.pop() || 0; a = stack.pop() || 0; stack.push(a === b ? 1 : 0); break;
                     case '!=': b = stack.pop() || 0; a = stack.pop() || 0; stack.push(a !== b ? 1 : 0); break;
                     case '?:': c = stack.pop() || 0; b = stack.pop() || 0; a = stack.pop() || 0; stack.push(a ? b : c); break;
+                    // Trig
                     case 'sin': a = stack.pop() || 0; stack.push(Math.sin(a)); break;
                     case 'cos': a = stack.pop() || 0; stack.push(Math.cos(a)); break;
                     case 'tan': a = stack.pop() || 0; stack.push(Math.tan(a)); break;
-                    case 'abs': a = stack.pop() || 0; stack.push(Math.abs(a)); break;
+                    case 'asin': a = stack.pop() || 0; stack.push(Math.asin(a)); break;
+                    case 'acos': a = stack.pop() || 0; stack.push(Math.acos(a)); break;
+                    case 'atan': a = stack.pop() || 0; stack.push(Math.atan(a)); break;
+                    // Hyperbolic
+                    case 'sinh': a = stack.pop() || 0; stack.push(Math.sinh(a)); break;
+                    case 'cosh': a = stack.pop() || 0; stack.push(Math.cosh(a)); break;
+                    case 'tanh': a = stack.pop() || 0; stack.push(Math.tanh(a)); break;
+                    // Roots & powers
                     case 'sqrt': a = stack.pop() || 0; stack.push(Math.sqrt(a)); break;
+                    case 'cbrt': a = stack.pop() || 0; stack.push(Math.cbrt(a)); break;
+                    case 'pow': b = stack.pop() || 0; a = stack.pop() || 0; stack.push(Math.pow(a, b)); break;
+                    case 'exp': a = stack.pop() || 0; stack.push(Math.exp(a)); break;
+                    // Logs
+                    case 'log': a = stack.pop() || 0; stack.push(Math.log(a)); break;
+                    case 'log10': a = stack.pop() || 0; stack.push(Math.log10(a)); break;
+                    // Rounding & conversion
                     case 'floor': a = stack.pop() || 0; stack.push(Math.floor(a)); break;
                     case 'ceil': a = stack.pop() || 0; stack.push(Math.ceil(a)); break;
-                    case 'log': a = stack.pop() || 0; stack.push(Math.log(a)); break;
-                    case 'exp': a = stack.pop() || 0; stack.push(Math.exp(a)); break;
-                    case 'pow': b = stack.pop() || 0; a = stack.pop() || 0; stack.push(Math.pow(a, b)); break;
+                    case 'round': a = stack.pop() || 0; stack.push(Math.round(a)); break;
+                    case 'int': a = stack.pop() || 0; stack.push(Math.trunc(a)); break;
+                    case 'float': a = stack.pop() || 0; stack.push(a); break;
+                    // Misc
+                    case 'abs': case 'fabs': a = stack.pop() || 0; stack.push(Math.abs(a)); break;
                     case 'min': b = stack.pop() || 0; a = stack.pop() || 0; stack.push(Math.min(a, b)); break;
                     case 'max': b = stack.pop() || 0; a = stack.pop() || 0; stack.push(Math.max(a, b)); break;
+                    case 'fmod': b = stack.pop() || 0; a = stack.pop() || 0; stack.push(b !== 0 ? a - Math.trunc(a/b)*b : 0); break;
+                    case 'modf': a = stack.pop() || 0; stack.push(a - Math.trunc(a)); break;
+                    // Constants
+                    case 'PI': stack.push(Math.PI); break;
+                    case 'E': stack.push(Math.E); break;
                 }
             }
         }
