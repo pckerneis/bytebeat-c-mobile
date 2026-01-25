@@ -558,6 +558,13 @@ registerProcessor('bytebeat-processor', BytebeatProcessor);
 
         // Toggle hex mode
         function toggleHex() {
+            // Turn off FN mode if active
+            if (fnMode) {
+                fnMode = false;
+                fnBtn.classList.remove('active');
+                document.getElementById('main-keys').style.display = '';
+                document.getElementById('fn-keys').classList.remove('active');
+            }
             hexMode = !hexMode;
             hexBtn.classList.toggle('active', hexMode);
             document.getElementById('row-hex').classList.toggle('active', hexMode);
@@ -566,9 +573,16 @@ registerProcessor('bytebeat-processor', BytebeatProcessor);
 
         // Toggle FN mode
         function toggleFn() {
+            // Turn off HEX mode if active
+            if (hexMode) {
+                hexMode = false;
+                hexBtn.classList.remove('active');
+                document.getElementById('row-hex').classList.remove('active');
+                updateDisplay();
+            }
             fnMode = !fnMode;
             fnBtn.classList.toggle('active', fnMode);
-            document.getElementById('main-keys').style.display = fnMode ? 'none' : 'grid';
+            document.getElementById('main-keys').style.display = fnMode ? 'none' : '';
             document.getElementById('fn-keys').classList.toggle('active', fnMode);
         }
 
