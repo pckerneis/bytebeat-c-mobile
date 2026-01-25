@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Bytebeat C Mobile</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            height: 100%;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, monospace;
+            background: #1a1a1a;
+            color: #e0e0e0;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        /* Toolbar */
+        .toolbar {
+            display: flex;
+            gap: 4px;
+            padding: 5px 10px;
+            background: #222;
+            border-bottom: 1px solid #333;
+        }
+
+        .toolbar button {
+            background: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 4px;
+            padding: 6px 12px;
+            font-size: 12px;
+            color: #e0e0e0;
+            cursor: pointer;
+        }
+
+        .toolbar button:active {
+            background: #444;
+        }
+
+        .toolbar button:disabled {
+            opacity: 0.4;
+            cursor: default;
+        }
+
+        .toolbar .spacer {
+            flex: 1;
+        }
+
+        /* Expression Panel */
+        .expression-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+            min-height: 80px;
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #888;
+            margin-bottom: 5px;
+        }
+
+        .expression-display {
+            flex: 1;
+            background: #0d0d0d;
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 10px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 18px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            white-space: pre-wrap;
+            word-break: break-all;
+            line-height: 1.4;
+        }
+
+        .expression-display .cursor {
+            animation: blink-cursor 1s infinite;
+        }
+
+        .expression-display .cursor-end {
+            animation: blink-end 1s infinite;
+        }
+
+        @keyframes blink-cursor {
+            0%, 50% { background: #e0e0e0; color: #0d0d0d; }
+            51%, 100% { background: transparent; color: #e0e0e0; }
+        }
+
+        @keyframes blink-end {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        /* Keyboard Panel */
+        .keyboard-panel {
+            padding: 5px;
+        }
+
+        .keyboard {
+            display: grid;
+            gap: 4px;
+        }
+
+        .row {
+            display: grid;
+            gap: 4px;
+        }
+
+        .row-1 { grid-template-columns: 1fr 1fr 1fr 1fr 1fr 2fr; }
+        .row-hex { grid-template-columns: repeat(6, 1fr); display: none; }
+        .row-hex.active { display: grid; }
+        .row-2, .row-3, .row-4, .row-5 { grid-template-columns: repeat(7, 1fr); }
+        .row-fn { grid-template-columns: repeat(4, 1fr); }
+        .row-6 { grid-template-columns: 2fr 2fr 2fr 2fr; }
+
+        #main-keys { display: grid; gap: 4px; }
+        #fn-keys { display: none; gap: 4px; }
+        #fn-keys.active { display: grid; }
+
+        .key {
+            background: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 4px;
+            padding: 12px 4px;
+            font-size: 16px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            color: #e0e0e0;
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 44px;
+        }
+
+        .key:active {
+            background: #444;
+            border-color: #666;
+        }
+
+        .key.modifier {
+            background: #1e3a5f;
+            border-color: #2a5080;
+        }
+
+        .key.modifier:active {
+            background: #2a5080;
+        }
+
+        .key.modifier.active {
+            background: #3a6090;
+            border-color: #4a80b0;
+        }
+
+        .key.action {
+            background: #3a1e1e;
+            border-color: #5a2a2a;
+        }
+
+        .key.action:active {
+            background: #5a2a2a;
+        }
+
+        .key.play {
+            background: #1e3a1e;
+            border-color: #2a5a2a;
+        }
+
+        .key.play:active, .key.play.active {
+            background: #2a5a2a;
+            border-color: #3a7a3a;
+        }
+
+        .key.live {
+            background: #3a2a1e;
+            border-color: #5a3a2a;
+        }
+
+        .key.live:active, .key.live.active {
+            background: #5a4a2a;
+            border-color: #7a6a3a;
+        }
+
+        .key.nav {
+            background: #2a2a3a;
+            border-color: #3a3a5a;
+        }
+
+        .key.nav:active {
+            background: #3a3a5a;
+        }
+
+            </style>
+</head>
+<body>
+    <div class="container">
+        <div class="toolbar">
+            <button id="undo-btn" disabled>Undo</button>
+            <button id="redo-btn" disabled>Redo</button>
+            <span class="spacer"></span>
+            <button id="copy-btn">Copy</button>
+            <button id="paste-btn">Paste</button>
+        </div>
+        <div class="expression-panel">
+            <div class="status-bar">
+                <span id="sr-display">SR: 8000</span>
+                <span id="mode-display"></span>
+            </div>
+            <div class="expression-display" id="expr-display"><span id="expr-before"></span><span id="expr-cursor"></span><span id="expr-after"></span></div>
+        </div>
+
+        <div class="keyboard-panel">
+            <div class="keyboard">
+                <div class="row row-1">
+                    <button class="key modifier" data-action="bin">0b</button>
+                    <button class="key modifier" data-action="hex-prefix">0x</button>
+                    <button class="key modifier" data-action="sr">SR</button>
+                    <button class="key modifier" data-action="hex" id="hex-btn">HEX</button>
+                    <button class="key modifier" data-action="fn" id="fn-btn">FN</button>
+                    <button class="key action" data-action="del">DEL</button>
+                </div>
+                <div id="main-keys">
+                    <div class="row row-hex" id="row-hex">
+                        <button class="key" data-char="a">a</button>
+                        <button class="key" data-char="b">b</button>
+                        <button class="key" data-char="c">c</button>
+                        <button class="key" data-char="d">d</button>
+                        <button class="key" data-char="e">e</button>
+                        <button class="key" data-char="f">f</button>
+                    </div>
+                    <div class="row row-2">
+                        <button class="key" data-char="7">7</button>
+                        <button class="key" data-char="8">8</button>
+                        <button class="key" data-char="9">9</button>
+                        <button class="key" data-char="-">-</button>
+                        <button class="key" data-char="+">+</button>
+                        <button class="key" data-char="%">%</button>
+                        <button class="key" data-char="~">~</button>
+                    </div>
+                    <div class="row row-3">
+                        <button class="key" data-char="4">4</button>
+                        <button class="key" data-char="5">5</button>
+                        <button class="key" data-char="6">6</button>
+                        <button class="key" data-char="*">*</button>
+                        <button class="key" data-char="/">/</button>
+                        <button class="key" data-char="^">^</button>
+                        <button class="key" data-char=",">,</button>
+                    </div>
+                    <div class="row row-4">
+                        <button class="key" data-char="1">1</button>
+                        <button class="key" data-char="2">2</button>
+                        <button class="key" data-char="3">3</button>
+                        <button class="key" data-char="&">&</button>
+                        <button class="key" data-char="|">|</button>
+                        <button class="key" data-char="?">?</button>
+                        <button class="key" data-char=":">:</button>
+                    </div>
+                    <div class="row row-5">
+                        <button class="key" data-char="t">t</button>
+                        <button class="key" data-char="0">0</button>
+                        <button class="key" data-char=".">.</button>
+                        <button class="key" data-char="(">(</button>
+                        <button class="key" data-char=")">)</button>
+                        <button class="key" data-char="<">&lt;</button>
+                        <button class="key" data-char=">">&gt;</button>
+                    </div>
+                </div>
+                <div id="fn-keys" class="fn-keys">
+                    <div class="row row-fn">
+                        <button class="key" data-char="sin(">sin</button>
+                        <button class="key" data-char="cos(">cos</button>
+                        <button class="key" data-char="tan(">tan</button>
+                        <button class="key" data-char="abs(">abs</button>
+                    </div>
+                    <div class="row row-fn">
+                        <button class="key" data-char="sqrt(">sqrt</button>
+                        <button class="key" data-char="floor(">floor</button>
+                        <button class="key" data-char="ceil(">ceil</button>
+                        <button class="key" data-char="pow(">pow</button>
+                    </div>
+                    <div class="row row-fn">
+                        <button class="key" data-char="log(">log</button>
+                        <button class="key" data-char="exp(">exp</button>
+                        <button class="key" data-char="min(">min</button>
+                        <button class="key" data-char="max(">max</button>
+                    </div>
+                    <div class="row row-5">
+                        <button class="key" data-char="t">t</button>
+                        <button class="key" data-char="0">0</button>
+                        <button class="key" data-char=".">.</button>
+                        <button class="key" data-char="(">(</button>
+                        <button class="key" data-char=")">)</button>
+                        <button class="key" data-char=",">,</button>
+                        <button class="key" data-char=")">)</button>
+                    </div>
+                </div>
+                <div class="row row-6">
+                    <button class="key nav" data-action="left">Left</button>
+                    <button class="key play" data-action="play" id="play-btn">Play</button>
+                    <button class="key live" data-action="live" id="live-btn">Live</button>
+                    <button class="key nav" data-action="right">Right</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Worklet code as string
+        const workletCode = `
+class BytebeatProcessor extends AudioWorkletProcessor {
+    constructor() {
+        super();
+        this.t = 0;
+        this.rpn = [];
+        this.playing = false;
+        this.port.onmessage = (e) => {
+            if (e.data.type === 'setRPN') {
+                this.rpn = e.data.rpn;
+                if (!e.data.keepTime) this.t = 0;
+            } else if (e.data.type === 'play') {
+                this.playing = true;
+            } else if (e.data.type === 'stop') {
+                this.playing = false;
+            } else if (e.data.type === 'reset') {
+                this.t = 0;
+            }
+        };
+    }
+
+    evalRPN(t) {
+        if (this.rpn.length === 0) return 0;
+        const stack = [];
+        for (const token of this.rpn) {
+            if (typeof token === 'number') {
+                stack.push(token);
+            } else if (token === 't') {
+                stack.push(t);
+            } else {
+                let a, b, c;
+                switch (token) {
+                    case '+': b = stack.pop() || 0; a = stack.pop() || 0; stack.push(a + b); break;
+                    case '-': b = stack.pop() || 0; a = stack.pop() || 0; stack.push(a - b); break;
+                    case '*': b = stack.pop() || 0; a = stack.pop() || 0; stack.push(a * b); break;
+                    case '/': b = stack.pop() || 0; a = stack.pop() || 0; stack.push(b !== 0 ? Math.trunc(a / b) : 0); break;
+                    case '%': b = stack.pop() || 0; a = stack.pop() || 0; stack.push(b !== 0 ? a % b : 0); break;
+                    case '&': b = stack.pop() || 0; a = stack.pop() || 0; stack.push(a & b); break;
+                    case '|': b = stack.pop() || 0; a = stack.pop() || 0; stack.push(a | b); break;
+                    case '^': b = stack.pop() || 0; a = stack.pop() || 0; stack.push(a ^ b); break;
+                    case '~': a = stack.pop() || 0; stack.push(~a); break;
+                    case '<<': b = stack.pop() || 0; a = stack.pop() || 0; stack.push(a << b); break;
+                    case '>>': b = stack.pop() || 0; a = stack.pop() || 0; stack.push(a >> b); break;
+                    case '<': b = stack.pop() || 0; a = stack.pop() || 0; stack.push(a < b ? 1 : 0); break;
+                    case '>': b = stack.pop() || 0; a = stack.pop() || 0; stack.push(a > b ? 1 : 0); break;
+                    case '<=': b = stack.pop() || 0; a = stack.pop() || 0; stack.push(a <= b ? 1 : 0); break;
+                    case '>=': b = stack.pop() || 0; a = stack.pop() || 0; stack.push(a >= b ? 1 : 0); break;
+                    case '==': b = stack.pop() || 0; a = stack.pop() || 0; stack.push(a === b ? 1 : 0); break;
+                    case '!=': b = stack.pop() || 0; a = stack.pop() || 0; stack.push(a !== b ? 1 : 0); break;
+                    case '?:': c = stack.pop() || 0; b = stack.pop() || 0; a = stack.pop() || 0; stack.push(a ? b : c); break;
+                    case 'sin': a = stack.pop() || 0; stack.push(Math.sin(a)); break;
+                    case 'cos': a = stack.pop() || 0; stack.push(Math.cos(a)); break;
+                    case 'tan': a = stack.pop() || 0; stack.push(Math.tan(a)); break;
+                    case 'abs': a = stack.pop() || 0; stack.push(Math.abs(a)); break;
+                    case 'sqrt': a = stack.pop() || 0; stack.push(Math.sqrt(a)); break;
+                    case 'floor': a = stack.pop() || 0; stack.push(Math.floor(a)); break;
+                    case 'ceil': a = stack.pop() || 0; stack.push(Math.ceil(a)); break;
+                    case 'log': a = stack.pop() || 0; stack.push(Math.log(a)); break;
+                    case 'exp': a = stack.pop() || 0; stack.push(Math.exp(a)); break;
+                    case 'pow': b = stack.pop() || 0; a = stack.pop() || 0; stack.push(Math.pow(a, b)); break;
+                    case 'min': b = stack.pop() || 0; a = stack.pop() || 0; stack.push(Math.min(a, b)); break;
+                    case 'max': b = stack.pop() || 0; a = stack.pop() || 0; stack.push(Math.max(a, b)); break;
+                }
+            }
+        }
+        return (stack.pop() || 0) & 255;
+    }
+
+    process(inputs, outputs) {
+        const output = outputs[0];
+        if (!this.playing || output.length === 0) {
+            return true;
+        }
+        const channel = output[0];
+        for (let i = 0; i < channel.length; i++) {
+            const sample = this.evalRPN(this.t);
+            channel[i] = (sample - 128) / 128;
+            this.t++;
+        }
+        return true;
+    }
+}
+
+registerProcessor('bytebeat-processor', BytebeatProcessor);
+`;
+
+        // State
+        let expression = '';
+        let cursorPos = 0;
+        let undoStack = [];
+        let redoStack = [];
+        let sampleRates = [8000, 11025, 16000, 22050, 32000, 44100, 48000];
+        let srIndex = 0;
+        let hexMode = false;
+        let fnMode = false;
+        let isPlaying = false;
+        let liveMode = false;
+        let audioCtx = null;
+        let workletNode = null;
+
+        // DOM elements
+        const exprBefore = document.getElementById('expr-before');
+        const exprCursor = document.getElementById('expr-cursor');
+        const exprAfter = document.getElementById('expr-after');
+        const srDisplay = document.getElementById('sr-display');
+        const modeDisplay = document.getElementById('mode-display');
+        const hexBtn = document.getElementById('hex-btn');
+        const fnBtn = document.getElementById('fn-btn');
+        const playBtn = document.getElementById('play-btn');
+        const liveBtn = document.getElementById('live-btn');
+        const undoBtn = document.getElementById('undo-btn');
+        const redoBtn = document.getElementById('redo-btn');
+        const copyBtn = document.getElementById('copy-btn');
+        const pasteBtn = document.getElementById('paste-btn');
+
+        // Save state for undo
+        function saveState() {
+            undoStack.push({ expression, cursorPos });
+            redoStack = [];
+            updateUndoRedoButtons();
+        }
+
+        function undo() {
+            if (undoStack.length > 0) {
+                redoStack.push({ expression, cursorPos });
+                const state = undoStack.pop();
+                expression = state.expression;
+                cursorPos = state.cursorPos;
+                updateDisplay();
+                updateUndoRedoButtons();
+                liveUpdate();
+            }
+        }
+
+        function redo() {
+            if (redoStack.length > 0) {
+                undoStack.push({ expression, cursorPos });
+                const state = redoStack.pop();
+                expression = state.expression;
+                cursorPos = state.cursorPos;
+                updateDisplay();
+                updateUndoRedoButtons();
+                liveUpdate();
+            }
+        }
+
+        function updateUndoRedoButtons() {
+            undoBtn.disabled = undoStack.length === 0;
+            redoBtn.disabled = redoStack.length === 0;
+        }
+
+        // Update display
+        function updateDisplay() {
+            exprBefore.textContent = expression.slice(0, cursorPos);
+            if (cursorPos >= expression.length) {
+                // Cursor at end - show underscore
+                exprCursor.textContent = '_';
+                exprCursor.className = 'cursor-end';
+                exprAfter.textContent = '';
+            } else {
+                // Cursor inside - show inverted character
+                exprCursor.textContent = expression[cursorPos];
+                exprCursor.className = 'cursor';
+                exprAfter.textContent = expression.slice(cursorPos + 1);
+            }
+            srDisplay.textContent = `SR: ${sampleRates[srIndex]}`;
+            modeDisplay.textContent = hexMode ? 'HEX' : '';
+        }
+
+        // Live update - send new RPN to worklet without resetting t
+        function liveUpdate() {
+            if (liveMode && isPlaying && workletNode) {
+                const rpn = parseExpr(expression);
+                workletNode.port.postMessage({ type: 'setRPN', rpn, keepTime: true });
+            }
+        }
+
+        // Insert character at cursor
+        function insertChar(char) {
+            saveState();
+            expression = expression.slice(0, cursorPos) + char + expression.slice(cursorPos);
+            cursorPos += char.length;
+            updateDisplay();
+            liveUpdate();
+        }
+
+        // Delete character before cursor
+        function deleteChar() {
+            if (cursorPos > 0) {
+                saveState();
+                expression = expression.slice(0, cursorPos - 1) + expression.slice(cursorPos);
+                cursorPos--;
+                updateDisplay();
+                liveUpdate();
+            }
+        }
+
+        // Move cursor
+        function moveCursor(dir) {
+            cursorPos = Math.max(0, Math.min(expression.length, cursorPos + dir));
+            updateDisplay();
+        }
+
+        // Toggle hex mode
+        function toggleHex() {
+            hexMode = !hexMode;
+            hexBtn.classList.toggle('active', hexMode);
+            document.getElementById('row-hex').classList.toggle('active', hexMode);
+            updateDisplay();
+        }
+
+        // Toggle FN mode
+        function toggleFn() {
+            fnMode = !fnMode;
+            fnBtn.classList.toggle('active', fnMode);
+            document.getElementById('main-keys').style.display = fnMode ? 'none' : 'grid';
+            document.getElementById('fn-keys').classList.toggle('active', fnMode);
+        }
+
+        // Cycle sample rate
+        function cycleSampleRate() {
+            srIndex = (srIndex + 1) % sampleRates.length;
+            updateDisplay();
+            if (isPlaying) {
+                stopAudio();
+                startAudio();
+            }
+        }
+
+        // C expression tokenizer
+        function tokenize(expr) {
+            const tokens = [];
+            let i = 0;
+            while (i < expr.length) {
+                const c = expr[i];
+
+                // Skip whitespace
+                if (/\s/.test(c)) {
+                    i++;
+                    continue;
+                }
+
+                // Numbers (decimal, hex, binary)
+                if (/[0-9]/.test(c) || (c === '0' && (expr[i+1] === 'x' || expr[i+1] === 'b'))) {
+                    let num = '';
+                    if (c === '0' && expr[i+1] === 'x') {
+                        // Hex
+                        i += 2;
+                        while (i < expr.length && /[0-9a-fA-F]/.test(expr[i])) {
+                            num += expr[i++];
+                        }
+                        tokens.push({ type: 'num', value: parseInt(num, 16) || 0 });
+                    } else if (c === '0' && expr[i+1] === 'b') {
+                        // Binary
+                        i += 2;
+                        while (i < expr.length && /[01]/.test(expr[i])) {
+                            num += expr[i++];
+                        }
+                        tokens.push({ type: 'num', value: parseInt(num, 2) || 0 });
+                    } else {
+                        // Decimal
+                        while (i < expr.length && /[0-9.]/.test(expr[i])) {
+                            num += expr[i++];
+                        }
+                        tokens.push({ type: 'num', value: parseFloat(num) || 0 });
+                    }
+                    continue;
+                }
+
+                // Identifiers (t, functions)
+                if (/[a-zA-Z_]/.test(c)) {
+                    let id = '';
+                    while (i < expr.length && /[a-zA-Z_0-9]/.test(expr[i])) {
+                        id += expr[i++];
+                    }
+                    if (id === 't') {
+                        tokens.push({ type: 't' });
+                    } else {
+                        tokens.push({ type: 'func', value: id });
+                    }
+                    continue;
+                }
+
+                // Two-char operators
+                const two = expr.slice(i, i+2);
+                if (['<<', '>>', '<=', '>=', '==', '!='].includes(two)) {
+                    tokens.push({ type: 'op', value: two });
+                    i += 2;
+                    continue;
+                }
+
+                // Single-char operators and parens
+                if ('+-*/%&|^~<>?:(),'.includes(c)) {
+                    tokens.push({ type: c === '(' || c === ')' ? c : (c === ',' ? ',' : 'op'), value: c });
+                    i++;
+                    continue;
+                }
+
+                // Unknown, skip
+                i++;
+            }
+            return tokens;
+        }
+
+        // Shunting-yard algorithm for C expression to RPN
+        function toRPN(expr) {
+            const tokens = tokenize(expr);
+            const output = [];
+            const opStack = [];
+
+            const precedence = {
+                '?': 1, ':': 1,
+                '|': 2,
+                '^': 3,
+                '&': 4,
+                '==': 5, '!=': 5,
+                '<': 6, '>': 6, '<=': 6, '>=': 6,
+                '<<': 7, '>>': 7,
+                '+': 8, '-': 8,
+                '*': 9, '/': 9, '%': 9,
+                '~': 10,
+            };
+
+            const rightAssoc = new Set(['?', ':']);
+
+            let ternaryStack = []; // Track ternary operators
+
+            for (let i = 0; i < tokens.length; i++) {
+                const tok = tokens[i];
+
+                if (tok.type === 'num') {
+                    output.push(tok.value);
+                } else if (tok.type === 't') {
+                    output.push('t');
+                } else if (tok.type === 'func') {
+                    opStack.push(tok);
+                } else if (tok.type === '(') {
+                    opStack.push(tok);
+                } else if (tok.type === ')') {
+                    while (opStack.length && opStack[opStack.length - 1].type !== '(') {
+                        const op = opStack.pop();
+                        output.push(op.value);
+                    }
+                    if (opStack.length) opStack.pop(); // Remove '('
+                    if (opStack.length && opStack[opStack.length - 1].type === 'func') {
+                        output.push(opStack.pop().value);
+                    }
+                } else if (tok.type === ',') {
+                    while (opStack.length && opStack[opStack.length - 1].type !== '(') {
+                        output.push(opStack.pop().value);
+                    }
+                } else if (tok.type === 'op') {
+                    const op = tok.value;
+
+                    // Handle ternary operator
+                    if (op === '?') {
+                        ternaryStack.push(output.length);
+                    } else if (op === ':') {
+                        // Pop operators until we find the matching ?
+                        while (opStack.length && opStack[opStack.length - 1].value !== '?') {
+                            output.push(opStack.pop().value);
+                        }
+                        // Keep the ? on stack, we'll resolve it when we have the false branch
+                    }
+
+                    const prec = precedence[op] || 0;
+                    while (opStack.length) {
+                        const top = opStack[opStack.length - 1];
+                        if (top.type === '(' || top.type === 'func') break;
+                        const topPrec = precedence[top.value] || 0;
+                        if (topPrec < prec) break;
+                        if (topPrec === prec && rightAssoc.has(op)) break;
+                        output.push(opStack.pop().value);
+                    }
+                    opStack.push(tok);
+                }
+            }
+
+            while (opStack.length) {
+                const op = opStack.pop();
+                if (op.type !== '(') {
+                    // Handle ternary: convert ? and : to single ?: operator
+                    if (op.value === '?' || op.value === ':') {
+                        // Skip standalone ? and :, we'll handle ternary differently
+                    } else {
+                        output.push(op.value);
+                    }
+                }
+            }
+
+            // Post-process to handle ternary operators
+            // Simple approach: find patterns and convert
+            return postProcessTernary(output, expr);
+        }
+
+        // Simpler approach: evaluate expression using a recursive descent parser
+        function parseExpr(expr) {
+            const tokens = tokenize(expr);
+            let pos = 0;
+
+            function peek() { return tokens[pos]; }
+            function consume() { return tokens[pos++]; }
+
+            function parseTernary() {
+                let left = parseOr();
+                if (peek() && peek().value === '?') {
+                    consume(); // ?
+                    const mid = parseTernary();
+                    if (peek() && peek().value === ':') {
+                        consume(); // :
+                        const right = parseTernary();
+                        return [...left, ...mid, ...right, '?:'];
+                    }
+                }
+                return left;
+            }
+
+            function parseOr() {
+                let left = parseXor();
+                while (peek() && peek().value === '|') {
+                    consume();
+                    const right = parseXor();
+                    left = [...left, ...right, '|'];
+                }
+                return left;
+            }
+
+            function parseXor() {
+                let left = parseAnd();
+                while (peek() && peek().value === '^') {
+                    consume();
+                    const right = parseAnd();
+                    left = [...left, ...right, '^'];
+                }
+                return left;
+            }
+
+            function parseAnd() {
+                let left = parseEquality();
+                while (peek() && peek().value === '&') {
+                    consume();
+                    const right = parseEquality();
+                    left = [...left, ...right, '&'];
+                }
+                return left;
+            }
+
+            function parseEquality() {
+                let left = parseComparison();
+                while (peek() && (peek().value === '==' || peek().value === '!=')) {
+                    const op = consume().value;
+                    const right = parseComparison();
+                    left = [...left, ...right, op];
+                }
+                return left;
+            }
+
+            function parseComparison() {
+                let left = parseShift();
+                while (peek() && ['<', '>', '<=', '>='].includes(peek().value)) {
+                    const op = consume().value;
+                    const right = parseShift();
+                    left = [...left, ...right, op];
+                }
+                return left;
+            }
+
+            function parseShift() {
+                let left = parseAddSub();
+                while (peek() && (peek().value === '<<' || peek().value === '>>')) {
+                    const op = consume().value;
+                    const right = parseAddSub();
+                    left = [...left, ...right, op];
+                }
+                return left;
+            }
+
+            function parseAddSub() {
+                let left = parseMulDiv();
+                while (peek() && (peek().value === '+' || peek().value === '-')) {
+                    const op = consume().value;
+                    const right = parseMulDiv();
+                    left = [...left, ...right, op];
+                }
+                return left;
+            }
+
+            function parseMulDiv() {
+                let left = parseUnary();
+                while (peek() && ['*', '/', '%'].includes(peek().value)) {
+                    const op = consume().value;
+                    const right = parseUnary();
+                    left = [...left, ...right, op];
+                }
+                return left;
+            }
+
+            function parseUnary() {
+                if (peek() && peek().value === '~') {
+                    consume();
+                    const right = parseUnary();
+                    return [...right, '~'];
+                }
+                if (peek() && peek().value === '-') {
+                    consume();
+                    const right = parseUnary();
+                    return [0, ...right, '-'];
+                }
+                return parsePrimary();
+            }
+
+            function parsePrimary() {
+                const tok = peek();
+                if (!tok) return [0];
+
+                if (tok.type === 'num') {
+                    consume();
+                    return [tok.value];
+                }
+
+                if (tok.type === 't') {
+                    consume();
+                    return ['t'];
+                }
+
+                if (tok.type === 'func') {
+                    const fn = consume().value;
+                    if (peek() && peek().type === '(') {
+                        consume(); // (
+                        const args = [];
+                        if (peek() && peek().type !== ')') {
+                            args.push(parseTernary());
+                            while (peek() && peek().type === ',') {
+                                consume();
+                                args.push(parseTernary());
+                            }
+                        }
+                        if (peek() && peek().type === ')') consume();
+                        // Flatten args and add function
+                        const flat = args.flat();
+                        return [...flat, fn];
+                    }
+                    return [fn];
+                }
+
+                if (tok.type === '(') {
+                    consume();
+                    const inner = parseTernary();
+                    if (peek() && peek().type === ')') consume();
+                    return inner;
+                }
+
+                consume();
+                return [0];
+            }
+
+            try {
+                return parseTernary();
+            } catch (e) {
+                return [0];
+            }
+        }
+
+        function postProcessTernary(rpn, expr) {
+            // Use the recursive descent parser instead
+            return parseExpr(expr);
+        }
+
+        // Initialize audio
+        async function initAudio() {
+            if (audioCtx) return;
+
+            audioCtx = new AudioContext({ sampleRate: sampleRates[srIndex] });
+
+            const blob = new Blob([workletCode], { type: 'application/javascript' });
+            const url = URL.createObjectURL(blob);
+
+            await audioCtx.audioWorklet.addModule(url);
+            workletNode = new AudioWorkletNode(audioCtx, 'bytebeat-processor');
+            workletNode.connect(audioCtx.destination);
+
+            URL.revokeObjectURL(url);
+        }
+
+        // Start audio
+        async function startAudio() {
+            await initAudio();
+
+            // Recreate context if sample rate changed
+            if (audioCtx.sampleRate !== sampleRates[srIndex]) {
+                audioCtx.close();
+                audioCtx = null;
+                workletNode = null;
+                await initAudio();
+            }
+
+            const rpn = parseExpr(expression);
+            workletNode.port.postMessage({ type: 'setRPN', rpn });
+            workletNode.port.postMessage({ type: 'play' });
+
+            if (audioCtx.state === 'suspended') {
+                await audioCtx.resume();
+            }
+        }
+
+        // Stop audio
+        function stopAudio() {
+            if (workletNode) {
+                workletNode.port.postMessage({ type: 'stop' });
+            }
+        }
+
+        // Toggle play
+        async function togglePlay() {
+            if (isPlaying) {
+                stopAudio();
+                isPlaying = false;
+                playBtn.textContent = 'Play';
+                playBtn.classList.remove('active');
+            } else {
+                await startAudio();
+                isPlaying = true;
+                playBtn.textContent = 'Stop';
+                playBtn.classList.add('active');
+            }
+        }
+
+        // Toggle live mode
+        async function toggleLive() {
+            liveMode = !liveMode;
+            liveBtn.classList.toggle('active', liveMode);
+
+            // When activating live mode, start playing with current expression
+            if (liveMode && !isPlaying) {
+                await startAudio();
+                isPlaying = true;
+                playBtn.textContent = 'Stop';
+                playBtn.classList.add('active');
+            }
+        }
+
+        // Event handlers
+        document.querySelectorAll('.key[data-char]').forEach(key => {
+            key.addEventListener('click', () => {
+                insertChar(key.dataset.char);
+            });
+        });
+
+        document.querySelectorAll('.key[data-action]').forEach(key => {
+            key.addEventListener('click', () => {
+                const action = key.dataset.action;
+                switch (action) {
+                    case 'del': deleteChar(); break;
+                    case 'left': moveCursor(-1); break;
+                    case 'right': moveCursor(1); break;
+                    case 'play': togglePlay(); break;
+                    case 'live': toggleLive(); break;
+                    case 'hex': toggleHex(); break;
+                    case 'sr': cycleSampleRate(); break;
+                    case 'fn': toggleFn(); break;
+                    case 'bin': insertChar('0b'); break;
+                    case 'hex-prefix': insertChar('0x'); break;
+                }
+            });
+        });
+
+        // Keyboard support for desktop
+        document.addEventListener('keydown', async (e) => {
+            if (e.key === 'Backspace') {
+                e.preventDefault();
+                deleteChar();
+            } else if (e.key === 'ArrowLeft') {
+                moveCursor(-1);
+            } else if (e.key === 'ArrowRight') {
+                moveCursor(1);
+            } else if (e.key === 'Enter') {
+                togglePlay();
+            } else if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
+                // Copy expression
+                e.preventDefault();
+                navigator.clipboard.writeText(expression);
+            } else if ((e.ctrlKey || e.metaKey) && e.key === 'v') {
+                // Paste at cursor
+                e.preventDefault();
+                const text = await navigator.clipboard.readText();
+                insertChar(text);
+            } else if ((e.ctrlKey || e.metaKey) && e.key === 'x') {
+                // Cut expression
+                e.preventDefault();
+                navigator.clipboard.writeText(expression);
+                saveState();
+                expression = '';
+                cursorPos = 0;
+                updateDisplay();
+                liveUpdate();
+            } else if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+                // Undo
+                e.preventDefault();
+                undo();
+            } else if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.shiftKey && e.key === 'Z'))) {
+                // Redo
+                e.preventDefault();
+                redo();
+            } else if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
+                // Select all - move cursor to end
+                e.preventDefault();
+                cursorPos = expression.length;
+                updateDisplay();
+            } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) {
+                insertChar(e.key);
+            }
+        });
+
+        // Toolbar button handlers
+        undoBtn.addEventListener('click', undo);
+        redoBtn.addEventListener('click', redo);
+        copyBtn.addEventListener('click', () => navigator.clipboard.writeText(expression));
+        pasteBtn.addEventListener('click', async () => {
+            const text = await navigator.clipboard.readText();
+            insertChar(text);
+        });
+
+        // Initial display
+        updateDisplay();
+    </script>
+</body>
+</html>
