@@ -361,12 +361,30 @@ class BytebeatProcessor extends AudioWorkletProcessor {
     evalRPN(t) {
         if (this.rpn.length === 0) return 0;
         const stack = [];
-        for (const token of this.rpn) {
+        const vars = {}; // Variables reset on each sample
+        
+        for (let i = 0; i < this.rpn.length; i++) {
+            const token = this.rpn[i];
+            
             // Typed number from parser: {v, i}
             if (typeof token === 'object' && 'v' in token) {
                 stack.push(token);
             } else if (token === 't') {
                 stack.push(this.I(t));
+            } else if (typeof token === 'string' && token.startsWith('VAR:')) {
+                // Variable reference
+                const varName = token.substring(4);
+                const value = vars[varName];
+                stack.push(value || this.I(0));
+            } else if (typeof token === 'string' && token !== '=' && i + 1 < this.rpn.length && this.rpn[i + 1] === '=') {
+                // This is a variable name followed by '=' - skip it, will be handled by '=' case
+                continue;
+            } else if (typeof token === 'string' && token === '=') {
+                // Variable assignment: previous token is variable name, pop value from stack
+                const varName = this.rpn[i - 1];
+                const value = this.pop(stack);
+                vars[varName] = value;
+                stack.push(value);
             } else {
                 let a, b, c, av, bv, cv, bothInt;
                 switch (token) {
@@ -466,6 +484,14 @@ class BytebeatProcessor extends AudioWorkletProcessor {
                     // Constants - float
                     case 'PI': stack.push(this.F(Math.PI)); break;
                     case 'E': stack.push(this.F(Math.E)); break;
+                    // Comma operator - pop left and right, return right
+                    case ',':
+                        b = this.pop(stack); // right operand
+                        a = this.pop(stack); // left operand (discarded)
+                        stack.push(b);
+                        break;
+                    default:
+                        break;
                 }
             }
         }
@@ -706,7 +732,7 @@ registerProcessor('bytebeat-processor', BytebeatProcessor);
                     continue;
                 }
 
-                // Identifiers (t, functions)
+                // Identifiers (t, variables, functions)
                 if (/[a-zA-Z_]/.test(c)) {
                     let id = '';
                     while (i < expr.length && /[a-zA-Z_0-9]/.test(expr[i])) {
@@ -715,7 +741,17 @@ registerProcessor('bytebeat-processor', BytebeatProcessor);
                     if (id === 't') {
                         tokens.push({ type: 't' });
                     } else {
-                        tokens.push({ type: 'func', value: id });
+                        // Check if it's followed by '=' (variable assignment) or '(' (function)
+                        let j = i;
+                        while (j < expr.length && /\s/.test(expr[j])) j++;
+                        if (j < expr.length && expr[j] === '=') {
+                            tokens.push({ type: 'var', value: id });
+                        } else if (j < expr.length && expr[j] === '(') {
+                            tokens.push({ type: 'func', value: id });
+                        } else {
+                            // Variable reference
+                            tokens.push({ type: 'var', value: id });
+                        }
                     }
                     continue;
                 }
@@ -729,8 +765,12 @@ registerProcessor('bytebeat-processor', BytebeatProcessor);
                 }
 
                 // Single-char operators and parens
-                if ('+-*/%&|^~<>?:(),'.includes(c)) {
-                    tokens.push({ type: c === '(' || c === ')' ? c : (c === ',' ? ',' : 'op'), value: c });
+                if ('+-*/%&|^~<>?:(),='.includes(c)) {
+                    if (c === '=') {
+                        tokens.push({ type: '=', value: c });
+                    } else {
+                        tokens.push({ type: c === '(' || c === ')' ? c : (c === ',' ? ',' : 'op'), value: c });
+                    }
                     i++;
                     continue;
                 }
@@ -839,6 +879,35 @@ registerProcessor('bytebeat-processor', BytebeatProcessor);
 
             function peek() { return tokens[pos]; }
             function consume() { return tokens[pos++]; }
+
+            function parseComma() {
+                // Comma operator has lowest precedence
+                let left = parseAssignment();
+                while (peek() && peek().type === ',') {
+                    consume(); // ,
+                    const right = parseAssignment();
+                    // Generate RPN: left right ','
+                    // The ',' operator will pop both and return right
+                    left = [...left, ...right, ','];
+                }
+                return left;
+            }
+
+            function parseAssignment() {
+                // Check for variable assignment: var = expr
+                if (peek() && peek().type === 'var') {
+                    const varName = peek().value;
+                    const nextPos = pos + 1;
+                    if (tokens[nextPos] && tokens[nextPos].type === '=') {
+                        consume(); // var
+                        consume(); // =
+                        const value = parseAssignment();
+                        // Generate RPN: value varName '='
+                        return [...value, varName, '='];
+                    }
+                }
+                return parseTernary();
+            }
 
             function parseTernary() {
                 let left = parseOr();
@@ -962,6 +1031,12 @@ registerProcessor('bytebeat-processor', BytebeatProcessor);
                     return ['t'];
                 }
 
+                if (tok.type === 'var') {
+                    const varName = consume().value;
+                    // Variable reference - push variable name with 'VAR:' prefix
+                    return ['VAR:' + varName];
+                }
+
                 if (tok.type === 'func') {
                     const fn = consume().value;
                     if (peek() && peek().type === '(') {
@@ -994,7 +1069,7 @@ registerProcessor('bytebeat-processor', BytebeatProcessor);
             }
 
             try {
-                return parseTernary();
+                return parseComma();
             } catch (e) {
                 return [{v: 0, i: true}];
             }
