@@ -171,17 +171,24 @@
             border-color: #4a80b0;
         }
 
+        .key.toggle {
+            position: relative;
+        }
+
         .key.toggle::before {
             content: '';
-            width: 5px;
-            height: 5px;
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
             background: #00000098;
-            transform: translateX(-8px);
+            position: absolute;
+            top: 6px;
+            left: 6px;
         }
 
         .key.toggle.active::before {
-            background: #ffffffa7;
+            background: #ffffff;
+            mix-blend-mode: overlay;
         }
 
         .key.action {
@@ -719,8 +726,8 @@ registerProcessor('bytebeat-processor', BytebeatProcessor);
             { title: 'Another attempt at melody construction', author: 'viznut', sampleRate: 8000, code: '(t*((3+(1^t>>10&5))*(5+(3&t>>14))))>>(t>>8&3)' },
             { title: 'Song by tejeez', author: 'tejeez', sampleRate: 8000, code: '(~t>>2)*((127&t*(7&t>>10))<(245&t*(2+(5&t>>14))))' },
             { title: 'Song by skurk', author: 'skurk', sampleRate: 8000, code: 't*(t>>((t&4096)?((t*t)/4096):(t/4096)))|(t<<(t/256))|(t>>4)' },
-
-            // pck404
+            
+            // pck404's creations
             { title: 'deadbeef', author: 'pck404', sampleRate: 8000, code: 't*(0xdeadbeef>>(t>>11)&15)/2|t>>3|t>>(t>>10)' }
         ];
 
