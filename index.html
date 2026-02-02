@@ -416,6 +416,13 @@
     <script>
         // Worklet code as string
         const workletCode = `
+const _builtinGlobals = new Set(Object.getOwnPropertyNames(globalThis));
+function _deleteUserGlobals() {
+    for (const key of Object.getOwnPropertyNames(globalThis)) {
+        if (!_builtinGlobals.has(key)) delete globalThis[key];
+    }
+}
+
 class BytebeatProcessor extends AudioWorkletProcessor {
     constructor() {
         super();
@@ -431,17 +438,18 @@ class BytebeatProcessor extends AudioWorkletProcessor {
                 this.mode = e.data.mode || 'C';
                 if (!e.data.keepTime) this.t = 0;
             } else if (e.data.type === 'setJS') {
-                try { this.jsFunc = new Function('t', 'const {abs,acos,acosh,asin,asinh,atan,atan2,atanh,cbrt,ceil,clz32,cos,cosh,exp,expm1,floor,fround,hypot,imul,log,log1p,log2,log10,max,min,pow,random,round,sign,sin,sinh,sqrt,tan,tanh,trunc,E,LN2,LN10,LOG2E,LOG10E,PI,SQRT1_2,SQRT2}=Math,SR=sampleRate;return ' + e.data.expr); }
+                try { this.jsFunc = new Function('t', 'const {abs,acos,acosh,asin,asinh,atan,atan2,atanh,cbrt,ceil,clz32,cos,cosh,exp,expm1,floor,fround,hypot,imul,log,log1p,log2,log10,max,min,pow,random,round,sign,sin,sinh,sqrt,tan,tanh,trunc,E,LN2,LN10,LOG2E,LOG10E,PI,SQRT1_2,SQRT2}=Math,SR=sampleRate;return 0,\\n' + e.data.expr); }
                 catch(err) { this.jsFunc = null; }
                 this.rpn = [];
                 this.mode = e.data.mode;
-                if (!e.data.keepTime) this.t = 0;
+                if (!e.data.keepTime) { this.t = 0; _deleteUserGlobals(); }
             } else if (e.data.type === 'play') {
                 this.playing = true;
             } else if (e.data.type === 'stop') {
                 this.playing = false;
             } else if (e.data.type === 'reset') {
                 this.t = 0;
+                _deleteUserGlobals();
             }
         };
     }
