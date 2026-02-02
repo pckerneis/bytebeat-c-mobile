@@ -431,7 +431,7 @@ class BytebeatProcessor extends AudioWorkletProcessor {
                 this.mode = e.data.mode || 'C';
                 if (!e.data.keepTime) this.t = 0;
             } else if (e.data.type === 'setJS') {
-                try { this.jsFunc = new Function('t', 'return ' + e.data.expr); }
+                try { this.jsFunc = new Function('t', 'const {abs,acos,acosh,asin,asinh,atan,atan2,atanh,cbrt,ceil,clz32,cos,cosh,exp,expm1,floor,fround,hypot,imul,log,log1p,log2,log10,max,min,pow,random,round,sign,sin,sinh,sqrt,tan,tanh,trunc,E,LN2,LN10,LOG2E,LOG10E,PI,SQRT1_2,SQRT2}=Math;return ' + e.data.expr); }
                 catch(err) { this.jsFunc = null; }
                 this.rpn = [];
                 this.mode = e.data.mode;
@@ -672,7 +672,31 @@ registerProcessor('bytebeat-processor', BytebeatProcessor);
             { title: 'Song by skurk', author: 'skurk', sampleRate: 8000, code: 't*(t>>((t&4096)?((t*t)/4096):(t/4096)))|(t<<(t/256))|(t>>4)' },
             
             // pck404's creations
-            { title: 'deadbeef', author: 'pck404', sampleRate: 8000, code: 't*(0xdeadbeef>>(t>>11)&15)/2|t>>3|t>>(t>>10)' }
+            { title: 'deadbeef', author: 'pck404', sampleRate: 8000, code: 't*(0xdeadbeef>>(t>>11)&15)/2|t>>3|t>>(t>>10)' },
+            { title: 'Final Fantasy Prelude', author: 'pck404', sampleRate: 8000, code: `M=29728,M2=60532,m=29472,M7=46912,
+rt=0x53204747,
+ch=[M,m,M,m,M2,M2,M7,M7],
+m1=[
+0x99667777,0x77777777,0x99667777,0x777777b9,
+0x44224444,0x66997666,0xa79a7777,0x99cca999
+],
+m2=[
+0xcc99bbbb,0xbbbbbbbb,0xcc99bbbb,0xbbbbbbec,
+0x77667777,0x66667999,0x77779acc,0x9999acee
+],
+T=t>>10,
+S=T>>2,
+A=T=>(
+  a=T>>5&7,
+  b=abs(((T+16)&31)-16),
+  ((t*2**(1+(b>>2)+((rt>>a%8*4&15)+(ch[a]>>(b&3)*4&15))/12))&128)*(1.5-(t/1024)%1)
+),
+B=(p,o)=>((t*2**(o+(p[S>>3&7]>>S%16*4&15)/12))&127)*0.4,
+
+A(T)/2
++A(T-3)/6
++A(T-6)/8
++(B(m1,2)+B(m2,3)*0.5+((t*2**(1+(0x53204747>>((S>>3)&7)*4&15)/12))&128)*0.2)*(S>63)`}
         ];
 
         // State - load expression from localStorage
@@ -692,6 +716,9 @@ registerProcessor('bytebeat-processor', BytebeatProcessor);
         let gainNode = null;
         let currentMode = 'C';
         let volume = 1.0;
+        let shiftLocked = false;
+        let shiftLongPressTimer = null;
+        const SHIFT_LONG_PRESS_MS = 400;
         let srInputMode = false;
         let srInputBuffer = '';
         let modeSelectMode = false;
@@ -1506,7 +1533,7 @@ registerProcessor('bytebeat-processor', BytebeatProcessor);
             {base:'/', shift:'\\', abcAction:'tab', abcLabel:'TAB', abcShift:null},
             {base:'~', shift:'$', abcAction:'enter', abcLabel:'\u21B5', abcShift:null},
             // Row 5
-            {action:'shift', label:'\u2302', cls:'shift'},
+            {action:'shift', label:'\u2302', cls:'shift toggle'},
             {base:'0', abc:' ', abcLabel:'SP', abcShift:null},
             {base:'.', shift:'t', abc:'_', abcShift:null},
             {action:'left', label:'\u2190', cls:'nav'},
@@ -1626,14 +1653,23 @@ registerProcessor('bytebeat-processor', BytebeatProcessor);
                 }
             };
             if (k.action === 'shift') {
-                const on = () => { shiftActive = true; btn.classList.add('active'); };
-                const off = () => { shiftActive = false; btn.classList.remove('active'); };
-                btn.addEventListener('touchstart', e => { e.preventDefault(); on(); });
-                btn.addEventListener('touchend', e => { e.preventDefault(); off(); });
-                btn.addEventListener('touchcancel', e => { e.preventDefault(); off(); });
-                btn.addEventListener('mousedown', e => { e.preventDefault(); on(); });
-                btn.addEventListener('mouseup', e => { e.preventDefault(); off(); });
-                btn.addEventListener('mouseleave', () => off());
+                const activate = () => { shiftActive = true; btn.classList.add('active'); };
+                const deactivate = () => { shiftActive = false; shiftLocked = false; btn.classList.remove('active'); };
+                const onDown = () => {
+                    if (shiftLocked) { deactivate(); return; }
+                    activate();
+                    shiftLongPressTimer = setTimeout(() => { shiftLocked = true; shiftLongPressTimer = null; }, SHIFT_LONG_PRESS_MS);
+                };
+                const onUp = () => {
+                    if (shiftLongPressTimer) { clearTimeout(shiftLongPressTimer); shiftLongPressTimer = null; }
+                    if (!shiftLocked) deactivate();
+                };
+                btn.addEventListener('touchstart', e => { e.preventDefault(); onDown(); });
+                btn.addEventListener('touchend', e => { e.preventDefault(); onUp(); });
+                btn.addEventListener('touchcancel', e => { e.preventDefault(); onUp(); });
+                btn.addEventListener('mousedown', e => { e.preventDefault(); onDown(); });
+                btn.addEventListener('mouseup', e => { e.preventDefault(); onUp(); });
+                btn.addEventListener('mouseleave', () => { if (!shiftLocked) onUp(); });
             } else if (repeatables.includes(k.action)) {
                 btn.addEventListener('touchstart', e => { e.preventDefault(); startKeyRepeat(doAction); });
                 btn.addEventListener('touchend', e => { e.preventDefault(); stopKeyRepeat(); });
