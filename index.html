@@ -611,15 +611,16 @@ class BytebeatProcessor extends AudioWorkletProcessor {
             let raw;
             if (this.jsFunc) {
                 try { raw = this.jsFunc(this.t); } catch(e) { raw = 0; }
+                if (Array.isArray(raw)) raw = raw[0];
             } else {
                 raw = this.evalRPN(this.t);
             }
             switch (this.mode) {
                 case 'JS-float':
-                    channel[i] = Math.max(-1, Math.min(1, raw || 0));
+                    channel[i] = Math.max(-1, Math.min(1, Number(raw) || 0));
                     break;
                 case 'JS-int8':
-                    channel[i] = Math.max(-1, Math.min(1, (raw || 0) / 128));
+                    channel[i] = Math.max(-1, Math.min(1, (Number(raw) || 0) / 128));
                     break;
                 case 'JS-uint8':
                     channel[i] = (((raw || 0) & 255) - 128) / 128;
