@@ -112,36 +112,21 @@
         /* Keyboard Panel */
         .keyboard {
             display: grid;
-            grid-template-columns: repeat(14, 1fr);
+            grid-template-columns: repeat(6, 1fr);
         }
 
         .keyboard .key {
             border: none;
-            box-shadow: inset 2px 2px 0px 0px #ffffff12, inset -2px -2px 0px 0px #000000d9; 
+            box-shadow: inset 2px 2px 0px 0px #ffffff12, inset -2px -2px 0px 0px #000000d9;
         }
-
-        #main-keys, #fn-keys {
-            display: contents;
-        }
-
-        #fn-keys { display: none; }
-        #fn-keys.active { display: contents; }
-
-        .row-hex { display: none; }
-        .row-hex.active { display: contents; }
-
-        .key { grid-column: span 2; }
-        .key.wide { grid-column: span 4; }
-        .key.w3 { grid-column: span 3; }
-        .key.fn-w4 { grid-column: span 4; }
-        .key.fn-w3 { grid-column: span 3; }
 
         .key {
+            position: relative;
             background: #2a2a2a;
             border: 1px solid #444;
             border-radius: 0;
             padding: 12px 4px;
-            font-size: 16px;
+            font-size: 18px;
             font-family: 'Consolas', 'Monaco', monospace;
             color: #e0e0e0;
             cursor: pointer;
@@ -149,26 +134,46 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            min-height: 44px;
+            min-height: 48px;
+        }
+
+        .key-hint {
+            position: absolute;
+            font-size: 11px;
+            color: #888;
+            line-height: 1;
+        }
+
+        .key-hint.shift {
+            top: 6px;
+            left: 8px;
+            color: rgb(119, 119, 185);
+        }
+
+        .key-hint.abc {
+            top: 6px;
+            right: 8px;
+            color: rgb(93, 136, 93);
         }
 
         .key:active {
             background: #444;
-            border-color: #666;
         }
 
-        .key.modifier {
-            background: #1e3a5f;
-            border-color: #2a5080;
+        .key.shift {
+            background: rgb(60, 60, 143);
         }
 
-        .key.modifier:active {
-            background: #2a5080;
+        .key.shift:active, .key.shift.active {
+            background: rgb(81, 81, 165);
         }
 
-        .key.modifier.active {
-            background: #3a6090;
-            border-color: #4a80b0;
+        .key.abc {
+            background: rgb(43, 71, 53);
+        }
+
+        .key.abc:active, .key.abc.active {
+            background: rgb(60, 108, 77);
         }
 
         .key.toggle {
@@ -387,96 +392,7 @@
         </div>
 
         <div class="keyboard-panel">
-            <div class="keyboard">
-                <button class="key modifier" data-action="bin">0b</button>
-                <button class="key modifier" data-action="hex-prefix">0x</button>
-                <button class="key modifier" data-action="sr">SR</button>
-                <button class="key modifier toggle" data-action="hex" id="hex-btn">HEX</button>
-                <button class="key modifier toggle" data-action="fn" id="fn-btn">FN</button>
-                <button class="key action wide" data-action="del">DEL</button>
-
-                <div id="main-keys">
-                    <div class="row-hex" id="row-hex">
-                        <button class="key" data-char="a">a</button>
-                        <button class="key" data-char="b">b</button>
-                        <button class="key w3" data-char="c">c</button>
-                        <button class="key w3" data-char="d">d</button>
-                        <button class="key" data-char="e">e</button>
-                        <button class="key" data-char="f">f</button>
-                    </div>
-                    <button class="key" data-char="7">7</button>
-                    <button class="key" data-char="8">8</button>
-                    <button class="key" data-char="9">9</button>
-                    <button class="key" data-char="-">-</button>
-                    <button class="key" data-char="+">+</button>
-                    <button class="key" data-char="%">%</button>
-                    <button class="key" data-char="~">~</button>
-
-                    <button class="key" data-char="4">4</button>
-                    <button class="key" data-char="5">5</button>
-                    <button class="key" data-char="6">6</button>
-                    <button class="key" data-char="*">*</button>
-                    <button class="key" data-char="/">/</button>
-                    <button class="key" data-char="^">^</button>
-                    <button class="key" data-char=",">,</button>
-
-                    <button class="key" data-char="1">1</button>
-                    <button class="key" data-char="2">2</button>
-                    <button class="key" data-char="3">3</button>
-                    <button class="key" data-char="&">&</button>
-                    <button class="key" data-char="|">|</button>
-                    <button class="key" data-char="?">?</button>
-                    <button class="key" data-char=":">:</button>
-
-                    <button class="key" data-char="t">t</button>
-                    <button class="key" data-char="0">0</button>
-                    <button class="key" data-char=".">.</button>
-                    <button class="key" data-char="(">(</button>
-                    <button class="key" data-char=")">)</button>
-                    <button class="key" data-char="<">&lt;</button>
-                    <button class="key" data-char=">">&gt;</button>
-                </div>
-
-                <div id="fn-keys">
-                    <!-- Trig -->
-                    <button class="key" data-char="sin(">sin</button>
-                    <button class="key" data-char="cos(">cos</button>
-                    <button class="key" data-char="tan(">tan</button>
-                    <button class="key" data-char="asin(">asin</button>
-                    <button class="key" data-char="acos(">acos</button>
-                    <button class="key" data-char="atan(">atan</button>
-                    <button class="key" data-char="PI">PI</button>
-                    <!-- Hyperbolic -->
-                    <button class="key" data-char="sinh(">sinh</button>
-                    <button class="key" data-char="cosh(">cosh</button>
-                    <button class="key" data-char="tanh(">tanh</button>
-                    <button class="key" data-char="sqrt(">sqrt</button>
-                    <button class="key" data-char="cbrt(">cbrt</button>
-                    <button class="key" data-char="pow(">pow</button>
-                    <button class="key" data-char="E">E</button>
-                    <!-- Logs & exp -->
-                    <button class="key" data-char="log(">log</button>
-                    <button class="key" data-char="log10(">lg10</button>
-                    <button class="key" data-char="exp(">exp</button>
-                    <button class="key" data-char="fabs(">fabs</button>
-                    <button class="key" data-char="fmod(">fmod</button>
-                    <button class="key" data-char="modf(">modf</button>
-                    <button class="key" data-char="(">(</button>
-                    <!-- Rounding -->
-                    <button class="key" data-char="floor(">flr</button>
-                    <button class="key" data-char="ceil(">ceil</button>
-                    <button class="key" data-char="round(">rnd</button>
-                    <button class="key" data-char="int(">int</button>
-                    <button class="key" data-char="min(">min</button>
-                    <button class="key" data-char="max(">max</button>
-                    <button class="key" data-char=")">)</button>
-                </div>
-
-                <button class="key nav wide" data-action="left">←</button>
-                <button class="key play wide toggle" data-action="play" id="play-btn">Play</button>
-                <button class="key live toggle" data-action="live" id="live-btn">Live</button>
-                <button class="key nav wide" data-action="right">→</button>
-            </div>
+            <div class="keyboard" id="keyboard"></div>
         </div>
     </div>
 
@@ -738,8 +654,10 @@ registerProcessor('bytebeat-processor', BytebeatProcessor);
         let redoStack = [];
         let sampleRates = [8000, 11025, 16000, 22050, 32000, 44100, 48000];
         let srIndex = 0;
-        let hexMode = false;
-        let fnMode = false;
+        let abcMode = false;
+        let shiftActive = false;
+        let playBtnEl = null;
+        let abcBtnEl = null;
         let isPlaying = false;
         let liveMode = false;
         let audioCtx = null;
@@ -760,10 +678,6 @@ registerProcessor('bytebeat-processor', BytebeatProcessor);
         const exprAfter = document.getElementById('expr-after');
         const srDisplay = document.getElementById('sr-display');
         const modeDisplay = document.getElementById('mode-display');
-        const hexBtn = document.getElementById('hex-btn');
-        const fnBtn = document.getElementById('fn-btn');
-        const playBtn = document.getElementById('play-btn');
-        const liveBtn = document.getElementById('live-btn');
         const undoBtn = document.getElementById('undo-btn');
         const redoBtn = document.getElementById('redo-btn');
         const copyBtn = document.getElementById('copy-btn');
@@ -834,7 +748,7 @@ registerProcessor('bytebeat-processor', BytebeatProcessor);
                 exprAfter.textContent = expression.slice(cursorPos + 1);
             }
             srDisplay.textContent = `SR: ${sampleRates[srIndex]}`;
-            modeDisplay.textContent = hexMode ? 'HEX' : '';
+            modeDisplay.textContent = abcMode ? 'ABC' : '';
         }
 
         // Live update - send new RPN to worklet without resetting t
@@ -871,36 +785,6 @@ registerProcessor('bytebeat-processor', BytebeatProcessor);
         function moveCursor(dir) {
             cursorPos = Math.max(0, Math.min(expression.length, cursorPos + dir));
             updateDisplay();
-        }
-
-        // Toggle hex mode
-        function toggleHex() {
-            // Turn off FN mode if active
-            if (fnMode) {
-                fnMode = false;
-                fnBtn.classList.remove('active');
-                document.getElementById('main-keys').style.display = '';
-                document.getElementById('fn-keys').classList.remove('active');
-            }
-            hexMode = !hexMode;
-            hexBtn.classList.toggle('active', hexMode);
-            document.getElementById('row-hex').classList.toggle('active', hexMode);
-            updateDisplay();
-        }
-
-        // Toggle FN mode
-        function toggleFn() {
-            // Turn off HEX mode if active
-            if (hexMode) {
-                hexMode = false;
-                hexBtn.classList.remove('active');
-                document.getElementById('row-hex').classList.remove('active');
-                updateDisplay();
-            }
-            fnMode = !fnMode;
-            fnBtn.classList.toggle('active', fnMode);
-            document.getElementById('main-keys').style.display = fnMode ? 'none' : '';
-            document.getElementById('fn-keys').classList.toggle('active', fnMode);
         }
 
         // Cycle sample rate
@@ -1462,25 +1346,11 @@ registerProcessor('bytebeat-processor', BytebeatProcessor);
             if (isPlaying) {
                 stopAudio();
                 isPlaying = false;
-                playBtn.textContent = 'Play';
-                playBtn.classList.remove('active');
+                if (playBtnEl) { playBtnEl.querySelector('.key-main').textContent = '▸'; playBtnEl.classList.remove('active'); }
             } else {
                 await startAudio();
                 isPlaying = true;
-                playBtn.textContent = 'Stop';
-                playBtn.classList.add('active');
-            }
-        }
-
-        // Toggle live mode
-        async function toggleLive() {
-            liveMode = !liveMode;
-            liveBtn.classList.toggle('active', liveMode);
-
-            if (liveMode && isPlaying) {
-                // Refresh RPN
-                const rpn = parseExpr(expression);
-                workletNode.port.postMessage({ type: 'setRPN', rpn });
+                if (playBtnEl) { playBtnEl.querySelector('.key-main').textContent = '■'; playBtnEl.classList.add('active'); }
             }
         }
 
@@ -1510,100 +1380,150 @@ registerProcessor('bytebeat-processor', BytebeatProcessor);
             currentRepeatAction = null;
         }
 
-        // Event handlers
-        document.querySelectorAll('.key[data-char]').forEach(key => {
-            const char = key.dataset.char;
-            
-            // Touch events for key repeat
-            key.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                startKeyRepeat(() => insertChar(char));
-            });
-            
-            key.addEventListener('touchend', (e) => {
-                e.preventDefault();
-                stopKeyRepeat();
-            });
-            
-            key.addEventListener('touchcancel', (e) => {
-                e.preventDefault();
-                stopKeyRepeat();
-            });
-            
-            // Mouse events (for desktop)
-            key.addEventListener('mousedown', (e) => {
-                e.preventDefault();
-                startKeyRepeat(() => insertChar(char));
-            });
-            
-            key.addEventListener('mouseup', (e) => {
-                e.preventDefault();
-                stopKeyRepeat();
-            });
-            
-            key.addEventListener('mouseleave', () => {
-                stopKeyRepeat();
-            });
-        });
+        // Key map: 6 columns x 6 rows
+        const keymap = [
+            // Row 0
+            {base:'(', abc:'a', abcShift:'A'},
+            {base:')', abc:'b', abcShift:'B'},
+            {base:'[', abc:'c', abcShift:'C'},
+            {base:']', abc:'d', abcShift:'D'},
+            {action:'abc', label:'ABC', cls:'abc toggle'},
+            {action:'del', label:'DEL', cls:'action'},
+            // Row 1
+            {base:'?', abc:'e', abcShift:'E'},
+            {base:':', abc:'f', abcShift:'F'},
+            {base:'!', abc:'g', abcShift:'G'},
+            {base:'&', abc:'h', abcShift:'H'},
+            {base:'|', abc:'i', abcShift:'I'},
+            {base:'^', abc:'j', abcShift:'J'},
+            // Row 2
+            {base:'7', abc:'k', abcShift:'K'},
+            {base:'8', abc:'l', abcShift:'L'},
+            {base:'9', abc:'m', abcShift:'M'},
+            {base:'<', shift:'{', abc:'n', abcShift:'N'},
+            {base:'>', shift:'}', abc:'o', abcShift:'O'},
+            {base:'=', shift:'#', abc:'p', abcShift:'P'},
+            // Row 3
+            {base:'4', abc:'q', abcShift:'Q'},
+            {base:'5', abc:'r', abcShift:'R'},
+            {base:'6', abc:'s', abcShift:'S'},
+            {base:'+', shift:';', abc:'t', abcShift:'T'},
+            {base:'-', shift:',', abc:'u', abcShift:'U'},
+            {base:'%', shift:'$', abc:'v', abcShift:'V'},
+            // Row 4
+            {base:'1', abc:'w', abcShift:'W'},
+            {base:'2', abc:'x', abcShift:'X'},
+            {base:'3', abc:'y', abcShift:'Y'},
+            {base:'*', shift:'@', abc:'z', abcShift:'Z'},
+            {base:'/', shift:'\\', abcAction:'tab', abcLabel:'TAB', abcShift:null},
+            {base:'~', shift:'$', abcAction:'enter', abcLabel:'\u21B5', abcShift:null},
+            // Row 5
+            {action:'shift', label:'\u2302', cls:'shift'},
+            {base:'0', abc:' ', abcLabel:'SP', abcShift:null},
+            {base:'.', shift:'t', abc:'_', abcShift:null},
+            {action:'left', label:'\u2190', cls:'nav'},
+            {action:'right', label:'\u2192', cls:'nav'},
+            {action:'play', label:'\u25B8', cls:'play'},
+        ];
 
-        document.querySelectorAll('.key[data-action]').forEach(key => {
-            const action = key.dataset.action;
-            
-            // Determine which actions should repeat
-            const repeatableActions = ['del', 'left', 'right'];
-            const shouldRepeat = repeatableActions.includes(action);
-            
-            const executeAction = () => {
-                switch (action) {
+        function escapeHtml(s) {
+            return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        }
+
+        function getKeyChar(k) {
+            if (k.action) return null;
+            if (abcMode) {
+                if (shiftActive) {
+                    if ('abcShift' in k) return k.abcShift;
+                    if (k.abcAction) return null;
+                    return k.abc || k.base;
+                }
+                if (k.abcAction === 'tab') return '   ';
+                if (k.abcAction === 'enter') return '\n';
+                if (k.abc !== undefined) return k.abc;
+                return k.base;
+            }
+            if (shiftActive) return k.shift || k.base;
+            return k.base;
+        }
+
+        function buildKeyboard() {
+            const kb = document.getElementById('keyboard');
+            kb.innerHTML = '';
+            keymap.forEach(k => {
+                const btn = document.createElement('button');
+                btn.className = 'key' + (k.cls ? ' ' + k.cls : '');
+                if (k.action) {
+                    btn.innerHTML = '<span class="key-main">' + k.label + '</span>';
+                } else {
+                    const sh = k.shift ? escapeHtml(k.shift) : '';
+                    const ab = k.abcLabel || (k.abc && k.abc.trim() ? k.abc : '') || '';
+                    btn.innerHTML =
+                        '<span class="key-hint shift">' + sh + '</span>' +
+                        '<span class="key-main">' + escapeHtml(k.base) + '</span>' +
+                        '<span class="key-hint abc">' + escapeHtml(ab) + '</span>';
+                }
+                if (k.action) {
+                    setupActionKey(btn, k);
+                } else {
+                    setupCharKey(btn, k);
+                }
+                kb.appendChild(btn);
+            });
+        }
+
+        function setupCharKey(btn, k) {
+            const doPress = () => {
+                const ch = getKeyChar(k);
+                if (ch != null) insertChar(ch);
+            };
+            btn.addEventListener('touchstart', e => { e.preventDefault(); startKeyRepeat(doPress); });
+            btn.addEventListener('touchend', e => { e.preventDefault(); stopKeyRepeat(); });
+            btn.addEventListener('touchcancel', e => { e.preventDefault(); stopKeyRepeat(); });
+            btn.addEventListener('mousedown', e => { e.preventDefault(); startKeyRepeat(doPress); });
+            btn.addEventListener('mouseup', e => { e.preventDefault(); stopKeyRepeat(); });
+            btn.addEventListener('mouseleave', () => stopKeyRepeat());
+        }
+
+        function setupActionKey(btn, k) {
+            const repeatables = ['del', 'left', 'right'];
+            const doAction = () => {
+                switch (k.action) {
                     case 'del': deleteChar(); break;
                     case 'left': moveCursor(-1); break;
                     case 'right': moveCursor(1); break;
                     case 'play': togglePlay(); break;
-                    case 'live': toggleLive(); break;
-                    case 'hex': toggleHex(); break;
-                    case 'sr': cycleSampleRate(); break;
-                    case 'fn': toggleFn(); break;
-                    case 'bin': insertChar('0b'); break;
-                    case 'hex-prefix': insertChar('0x'); break;
+                    case 'abc': toggleAbc(); break;
                 }
             };
-            
-            if (shouldRepeat) {
-                // Touch events for repeatable actions
-                key.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    startKeyRepeat(executeAction);
-                });
-                
-                key.addEventListener('touchend', (e) => {
-                    e.preventDefault();
-                    stopKeyRepeat();
-                });
-                
-                key.addEventListener('touchcancel', (e) => {
-                    e.preventDefault();
-                    stopKeyRepeat();
-                });
-                
-                // Mouse events for repeatable actions
-                key.addEventListener('mousedown', (e) => {
-                    e.preventDefault();
-                    startKeyRepeat(executeAction);
-                });
-                
-                key.addEventListener('mouseup', (e) => {
-                    e.preventDefault();
-                    stopKeyRepeat();
-                });
-                
-                key.addEventListener('mouseleave', () => {
-                    stopKeyRepeat();
-                });
+            if (k.action === 'shift') {
+                const on = () => { shiftActive = true; btn.classList.add('active'); };
+                const off = () => { shiftActive = false; btn.classList.remove('active'); };
+                btn.addEventListener('touchstart', e => { e.preventDefault(); on(); });
+                btn.addEventListener('touchend', e => { e.preventDefault(); off(); });
+                btn.addEventListener('touchcancel', e => { e.preventDefault(); off(); });
+                btn.addEventListener('mousedown', e => { e.preventDefault(); on(); });
+                btn.addEventListener('mouseup', e => { e.preventDefault(); off(); });
+                btn.addEventListener('mouseleave', () => off());
+            } else if (repeatables.includes(k.action)) {
+                btn.addEventListener('touchstart', e => { e.preventDefault(); startKeyRepeat(doAction); });
+                btn.addEventListener('touchend', e => { e.preventDefault(); stopKeyRepeat(); });
+                btn.addEventListener('touchcancel', e => { e.preventDefault(); stopKeyRepeat(); });
+                btn.addEventListener('mousedown', e => { e.preventDefault(); startKeyRepeat(doAction); });
+                btn.addEventListener('mouseup', e => { e.preventDefault(); stopKeyRepeat(); });
+                btn.addEventListener('mouseleave', () => stopKeyRepeat());
             } else {
-                // Non-repeatable actions use click
-                key.addEventListener('click', executeAction);
+                btn.addEventListener('click', doAction);
             }
-        });
+            if (k.action === 'abc') abcBtnEl = btn;
+            if (k.action === 'play') playBtnEl = btn;
+        }
+
+        function toggleAbc() {
+            abcMode = !abcMode;
+            if (abcBtnEl) abcBtnEl.classList.toggle('active', abcMode);
+            modeDisplay.textContent = abcMode ? 'ABC' : '';
+        }
 
         // Keyboard support for desktop
         let physicalKeyRepeat = new Map(); // Track which keys are being held
@@ -1715,7 +1635,8 @@ registerProcessor('bytebeat-processor', BytebeatProcessor);
         tabPresets.addEventListener('click', () => switchLibraryTab('presets'));
         tabSaved.addEventListener('click', () => switchLibraryTab('saved'));
 
-        // Initial display
+        // Build keyboard and initial display
+        buildKeyboard();
         updateDisplay();
     </script>
 </body>
