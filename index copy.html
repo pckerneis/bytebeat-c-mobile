@@ -112,21 +112,36 @@
         /* Keyboard Panel */
         .keyboard {
             display: grid;
-            grid-template-columns: repeat(6, 1fr);
+            grid-template-columns: repeat(14, 1fr);
         }
 
         .keyboard .key {
             border: none;
-            box-shadow: inset 2px 2px 0px 0px #ffffff12, inset -2px -2px 0px 0px #000000d9;
+            box-shadow: inset 2px 2px 0px 0px #ffffff12, inset -2px -2px 0px 0px #000000d9; 
         }
 
+        #main-keys, #fn-keys {
+            display: contents;
+        }
+
+        #fn-keys { display: none; }
+        #fn-keys.active { display: contents; }
+
+        .row-hex { display: none; }
+        .row-hex.active { display: contents; }
+
+        .key { grid-column: span 2; }
+        .key.wide { grid-column: span 4; }
+        .key.w3 { grid-column: span 3; }
+        .key.fn-w4 { grid-column: span 4; }
+        .key.fn-w3 { grid-column: span 3; }
+
         .key {
-            position: relative;
             background: #2a2a2a;
             border: 1px solid #444;
             border-radius: 0;
             padding: 12px 4px;
-            font-size: 18px;
+            font-size: 16px;
             font-family: 'Consolas', 'Monaco', monospace;
             color: #e0e0e0;
             cursor: pointer;
@@ -134,46 +149,26 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            min-height: 48px;
-        }
-
-        .key-hint {
-            position: absolute;
-            font-size: 11px;
-            color: #888;
-            line-height: 1;
-        }
-
-        .key-hint.shift {
-            top: 6px;
-            left: 8px;
-            color: rgb(119, 119, 185);
-        }
-
-        .key-hint.abc {
-            top: 6px;
-            right: 8px;
-            color: rgb(93, 136, 93);
+            min-height: 44px;
         }
 
         .key:active {
             background: #444;
+            border-color: #666;
         }
 
-        .key.shift {
-            background: rgb(60, 60, 143);
+        .key.modifier {
+            background: #1e3a5f;
+            border-color: #2a5080;
         }
 
-        .key.shift:active, .key.shift.active {
-            background: rgb(81, 81, 165);
+        .key.modifier:active {
+            background: #2a5080;
         }
 
-        .key.abc {
-            background: rgb(43, 71, 53);
-        }
-
-        .key.abc:active, .key.abc.active {
-            background: rgb(60, 108, 77);
+        .key.modifier.active {
+            background: #3a6090;
+            border-color: #4a80b0;
         }
 
         .key.toggle {
@@ -392,7 +387,96 @@
         </div>
 
         <div class="keyboard-panel">
-            <div class="keyboard" id="keyboard"></div>
+            <div class="keyboard">
+                <button class="key modifier" data-action="bin">0b</button>
+                <button class="key modifier" data-action="hex-prefix">0x</button>
+                <button class="key modifier" data-action="sr">SR</button>
+                <button class="key modifier toggle" data-action="hex" id="hex-btn">HEX</button>
+                <button class="key modifier toggle" data-action="fn" id="fn-btn">FN</button>
+                <button class="key action wide" data-action="del">DEL</button>
+
+                <div id="main-keys">
+                    <div class="row-hex" id="row-hex">
+                        <button class="key" data-char="a">a</button>
+                        <button class="key" data-char="b">b</button>
+                        <button class="key w3" data-char="c">c</button>
+                        <button class="key w3" data-char="d">d</button>
+                        <button class="key" data-char="e">e</button>
+                        <button class="key" data-char="f">f</button>
+                    </div>
+                    <button class="key" data-char="7">7</button>
+                    <button class="key" data-char="8">8</button>
+                    <button class="key" data-char="9">9</button>
+                    <button class="key" data-char="-">-</button>
+                    <button class="key" data-char="+">+</button>
+                    <button class="key" data-char="%">%</button>
+                    <button class="key" data-char="~">~</button>
+
+                    <button class="key" data-char="4">4</button>
+                    <button class="key" data-char="5">5</button>
+                    <button class="key" data-char="6">6</button>
+                    <button class="key" data-char="*">*</button>
+                    <button class="key" data-char="/">/</button>
+                    <button class="key" data-char="^">^</button>
+                    <button class="key" data-char=",">,</button>
+
+                    <button class="key" data-char="1">1</button>
+                    <button class="key" data-char="2">2</button>
+                    <button class="key" data-char="3">3</button>
+                    <button class="key" data-char="&">&</button>
+                    <button class="key" data-char="|">|</button>
+                    <button class="key" data-char="?">?</button>
+                    <button class="key" data-char=":">:</button>
+
+                    <button class="key" data-char="t">t</button>
+                    <button class="key" data-char="0">0</button>
+                    <button class="key" data-char=".">.</button>
+                    <button class="key" data-char="(">(</button>
+                    <button class="key" data-char=")">)</button>
+                    <button class="key" data-char="<">&lt;</button>
+                    <button class="key" data-char=">">&gt;</button>
+                </div>
+
+                <div id="fn-keys">
+                    <!-- Trig -->
+                    <button class="key" data-char="sin(">sin</button>
+                    <button class="key" data-char="cos(">cos</button>
+                    <button class="key" data-char="tan(">tan</button>
+                    <button class="key" data-char="asin(">asin</button>
+                    <button class="key" data-char="acos(">acos</button>
+                    <button class="key" data-char="atan(">atan</button>
+                    <button class="key" data-char="PI">PI</button>
+                    <!-- Hyperbolic -->
+                    <button class="key" data-char="sinh(">sinh</button>
+                    <button class="key" data-char="cosh(">cosh</button>
+                    <button class="key" data-char="tanh(">tanh</button>
+                    <button class="key" data-char="sqrt(">sqrt</button>
+                    <button class="key" data-char="cbrt(">cbrt</button>
+                    <button class="key" data-char="pow(">pow</button>
+                    <button class="key" data-char="E">E</button>
+                    <!-- Logs & exp -->
+                    <button class="key" data-char="log(">log</button>
+                    <button class="key" data-char="log10(">lg10</button>
+                    <button class="key" data-char="exp(">exp</button>
+                    <button class="key" data-char="fabs(">fabs</button>
+                    <button class="key" data-char="fmod(">fmod</button>
+                    <button class="key" data-char="modf(">modf</button>
+                    <button class="key" data-char="(">(</button>
+                    <!-- Rounding -->
+                    <button class="key" data-char="floor(">flr</button>
+                    <button class="key" data-char="ceil(">ceil</button>
+                    <button class="key" data-char="round(">rnd</button>
+                    <button class="key" data-char="int(">int</button>
+                    <button class="key" data-char="min(">min</button>
+                    <button class="key" data-char="max(">max</button>
+                    <button class="key" data-char=")">)</button>
+                </div>
+
+                <button class="key nav wide" data-action="left">←</button>
+                <button class="key play wide toggle" data-action="play" id="play-btn">Play</button>
+                <button class="key live toggle" data-action="live" id="live-btn">Live</button>
+                <button class="key nav wide" data-action="right">→</button>
+            </div>
         </div>
     </div>
 
@@ -421,20 +505,10 @@ class BytebeatProcessor extends AudioWorkletProcessor {
         super();
         this.t = 0;
         this.rpn = [];
-        this.jsFunc = null;
-        this.mode = 'C';
         this.playing = false;
         this.port.onmessage = (e) => {
             if (e.data.type === 'setRPN') {
                 this.rpn = e.data.rpn;
-                this.jsFunc = null;
-                this.mode = e.data.mode || 'C';
-                if (!e.data.keepTime) this.t = 0;
-            } else if (e.data.type === 'setJS') {
-                try { this.jsFunc = new Function('t', 'const {abs,acos,acosh,asin,asinh,atan,atan2,atanh,cbrt,ceil,clz32,cos,cosh,exp,expm1,floor,fround,hypot,imul,log,log1p,log2,log10,max,min,pow,random,round,sign,sin,sinh,sqrt,tan,tanh,trunc,E,LN2,LN10,LOG2E,LOG10E,PI,SQRT1_2,SQRT2}=Math,SR=sampleRate;return ' + e.data.expr); }
-                catch(err) { this.jsFunc = null; }
-                this.rpn = [];
-                this.mode = e.data.mode;
                 if (!e.data.keepTime) this.t = 0;
             } else if (e.data.type === 'play') {
                 this.playing = true;
@@ -600,26 +674,8 @@ class BytebeatProcessor extends AudioWorkletProcessor {
         }
         const channel = output[0];
         for (let i = 0; i < channel.length; i++) {
-            let raw;
-            if (this.jsFunc) {
-                try { raw = this.jsFunc(this.t); } catch(e) { raw = 0; }
-            } else {
-                raw = this.evalRPN(this.t);
-            }
-            switch (this.mode) {
-                case 'JS-float':
-                    channel[i] = Math.max(-1, Math.min(1, raw || 0));
-                    break;
-                case 'JS-int8':
-                    channel[i] = Math.max(-1, Math.min(1, (raw || 0) / 128));
-                    break;
-                case 'JS-uint8':
-                    channel[i] = (((raw || 0) & 255) - 128) / 128;
-                    break;
-                default:
-                    channel[i] = (raw - 128) / 128;
-                    break;
-            }
+            const sample = this.evalRPN(this.t);
+            channel[i] = (sample - 128) / 128;
             this.t++;
         }
         return true;
@@ -672,31 +728,7 @@ registerProcessor('bytebeat-processor', BytebeatProcessor);
             { title: 'Song by skurk', author: 'skurk', sampleRate: 8000, code: 't*(t>>((t&4096)?((t*t)/4096):(t/4096)))|(t<<(t/256))|(t>>4)' },
             
             // pck404's creations
-            { title: 'deadbeef', author: 'pck404', sampleRate: 8000, code: 't*(0xdeadbeef>>(t>>11)&15)/2|t>>3|t>>(t>>10)' },
-            { title: 'Final Fantasy Prelude', author: 'pck404', sampleRate: 8000, mode: 'JS-uint8', code: `M=29728,M2=60532,m=29472,M7=46912,
-rt=0x53204747,
-ch=[M,m,M,m,M2,M2,M7,M7],
-m1=[
-0x99667777,0x77777777,0x99667777,0x777777b9,
-0x44224444,0x66997666,0xa79a7777,0x99cca999
-],
-m2=[
-0xcc99bbbb,0xbbbbbbbb,0xcc99bbbb,0xbbbbbbec,
-0x77667777,0x66667999,0x77779acc,0x9999acee
-],
-T=t>>10,
-S=T>>2,
-A=T=>(
-  a=T>>5&7,
-  b=abs(((T+16)&31)-16),
-  ((t*2**(1+(b>>2)+((rt>>a%8*4&15)+(ch[a]>>(b&3)*4&15))/12))&128)*(1.5-(t/1024)%1)
-),
-B=(p,o)=>((t*2**(o+(p[S>>3&7]>>S%16*4&15)/12))&127)*0.4,
-
-A(T)/2
-+A(T-3)/6
-+A(T-6)/8
-+(B(m1,2)+B(m2,3)*0.5+((t*2**(1+(0x53204747>>((S>>3)&7)*4&15)/12))&128)*0.2)*(S>63)`}
+            { title: 'deadbeef', author: 'pck404', sampleRate: 8000, code: 't*(0xdeadbeef>>(t>>11)&15)/2|t>>3|t>>(t>>10)' }
         ];
 
         // State - load expression from localStorage
@@ -704,25 +736,14 @@ A(T)/2
         let cursorPos = expression.length;
         let undoStack = [];
         let redoStack = [];
-        let currentSampleRate = parseInt(localStorage.getItem('bytebeat-sr')) || 8000;
-        let abcMode = false;
-        let shiftActive = false;
-        let playBtnEl = null;
-        let abcBtnEl = null;
+        let sampleRates = [8000, 11025, 16000, 22050, 32000, 44100, 48000];
+        let srIndex = 0;
+        let hexMode = false;
+        let fnMode = false;
         let isPlaying = false;
         let liveMode = false;
         let audioCtx = null;
         let workletNode = null;
-        let gainNode = null;
-        let currentMode = localStorage.getItem('bytebeat-mode') || 'C';
-        let volume = 1.0;
-        let shiftLocked = false;
-        let shiftLongPressTimer = null;
-        const SHIFT_LONG_PRESS_MS = 400;
-        let srInputMode = false;
-        let srInputBuffer = '';
-        let modeSelectMode = false;
-        const modes = ['C', 'JS-uint8', 'JS-int8', 'JS-float'];
         let savedSongs = JSON.parse(localStorage.getItem('bytebeat-saved') || '[]');
         let currentLibraryTab = 'presets';
 
@@ -739,6 +760,10 @@ A(T)/2
         const exprAfter = document.getElementById('expr-after');
         const srDisplay = document.getElementById('sr-display');
         const modeDisplay = document.getElementById('mode-display');
+        const hexBtn = document.getElementById('hex-btn');
+        const fnBtn = document.getElementById('fn-btn');
+        const playBtn = document.getElementById('play-btn');
+        const liveBtn = document.getElementById('live-btn');
         const undoBtn = document.getElementById('undo-btn');
         const redoBtn = document.getElementById('redo-btn');
         const copyBtn = document.getElementById('copy-btn');
@@ -754,8 +779,6 @@ A(T)/2
         // Save expression to localStorage
         function saveExpression() {
             localStorage.setItem('bytebeat-expr', expression);
-            localStorage.setItem('bytebeat-sr', currentSampleRate);
-            localStorage.setItem('bytebeat-mode', currentMode);
         }
 
         // Save state for undo
@@ -798,36 +821,27 @@ A(T)/2
 
         // Update display
         function updateDisplay() {
-            if (srInputMode) {
-                exprBefore.textContent = 'SR: ' + srInputBuffer;
+            exprBefore.textContent = expression.slice(0, cursorPos);
+            if (cursorPos >= expression.length) {
+                // Cursor at end - show underscore
                 exprCursor.textContent = '_';
                 exprCursor.className = 'cursor-end';
-                exprAfter.textContent = '\n\nEnter sample rate (100-48000)\n\u25B8 to confirm';
-            } else if (modeSelectMode) {
-                exprBefore.textContent = '';
-                exprCursor.textContent = '';
-                exprCursor.className = '';
-                exprAfter.textContent = '\u2190 ' + currentMode + ' \u2192\n\n\u25B8 to confirm';
+                exprAfter.textContent = '';
             } else {
-                exprBefore.textContent = expression.slice(0, cursorPos);
-                if (cursorPos >= expression.length) {
-                    exprCursor.textContent = '_';
-                    exprCursor.className = 'cursor-end';
-                    exprAfter.textContent = '';
-                } else {
-                    exprCursor.textContent = expression[cursorPos];
-                    exprCursor.className = 'cursor';
-                    exprAfter.textContent = expression.slice(cursorPos + 1);
-                }
+                // Cursor inside - show inverted character
+                exprCursor.textContent = expression[cursorPos];
+                exprCursor.className = 'cursor';
+                exprAfter.textContent = expression.slice(cursorPos + 1);
             }
-            srDisplay.textContent = `${currentMode} SR:${currentSampleRate} V:${volume.toFixed(1)}`;
-            modeDisplay.textContent = abcMode ? 'ABC' : '';
+            srDisplay.textContent = `SR: ${sampleRates[srIndex]}`;
+            modeDisplay.textContent = hexMode ? 'HEX' : '';
         }
 
-        // Live update - send new expression to worklet without resetting t
+        // Live update - send new RPN to worklet without resetting t
         function liveUpdate() {
             if (liveMode && isPlaying && workletNode) {
-                sendExpression(true);
+                const rpn = parseExpr(expression);
+                workletNode.port.postMessage({ type: 'setRPN', rpn, keepTime: true });
             }
         }
 
@@ -857,6 +871,46 @@ A(T)/2
         function moveCursor(dir) {
             cursorPos = Math.max(0, Math.min(expression.length, cursorPos + dir));
             updateDisplay();
+        }
+
+        // Toggle hex mode
+        function toggleHex() {
+            // Turn off FN mode if active
+            if (fnMode) {
+                fnMode = false;
+                fnBtn.classList.remove('active');
+                document.getElementById('main-keys').style.display = '';
+                document.getElementById('fn-keys').classList.remove('active');
+            }
+            hexMode = !hexMode;
+            hexBtn.classList.toggle('active', hexMode);
+            document.getElementById('row-hex').classList.toggle('active', hexMode);
+            updateDisplay();
+        }
+
+        // Toggle FN mode
+        function toggleFn() {
+            // Turn off HEX mode if active
+            if (hexMode) {
+                hexMode = false;
+                hexBtn.classList.remove('active');
+                document.getElementById('row-hex').classList.remove('active');
+                updateDisplay();
+            }
+            fnMode = !fnMode;
+            fnBtn.classList.toggle('active', fnMode);
+            document.getElementById('main-keys').style.display = fnMode ? 'none' : '';
+            document.getElementById('fn-keys').classList.toggle('active', fnMode);
+        }
+
+        // Cycle sample rate
+        function cycleSampleRate() {
+            srIndex = (srIndex + 1) % sampleRates.length;
+            updateDisplay();
+            if (isPlaying) {
+                stopAudio();
+                startAudio();
+            }
         }
 
         // Library functions
@@ -921,9 +975,11 @@ A(T)/2
             expression = song.code;
             cursorPos = expression.length;
             
-            // Set sample rate and mode
-            currentSampleRate = song.sampleRate;
-            currentMode = song.mode || 'C';
+            // Set sample rate
+            const srIdx = sampleRates.indexOf(song.sampleRate);
+            if (srIdx !== -1) {
+                srIndex = srIdx;
+            }
             
             updateDisplay();
             saveExpression();
@@ -950,7 +1006,7 @@ A(T)/2
             const song = {
                 title: title,
                 author: author,
-                sampleRate: currentSampleRate,
+                sampleRate: sampleRates[srIndex],
                 code: expression
             };
             
@@ -1361,30 +1417,16 @@ A(T)/2
         async function initAudio() {
             if (audioCtx) return;
 
-            audioCtx = new AudioContext({ sampleRate: currentSampleRate });
+            audioCtx = new AudioContext({ sampleRate: sampleRates[srIndex] });
 
             const blob = new Blob([workletCode], { type: 'application/javascript' });
             const url = URL.createObjectURL(blob);
 
             await audioCtx.audioWorklet.addModule(url);
             workletNode = new AudioWorkletNode(audioCtx, 'bytebeat-processor');
-            gainNode = audioCtx.createGain();
-            gainNode.gain.value = volume;
-            workletNode.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
+            workletNode.connect(audioCtx.destination);
 
             URL.revokeObjectURL(url);
-        }
-
-        // Send expression to worklet based on current mode
-        function sendExpression(keepTime) {
-            if (!workletNode) return;
-            if (currentMode === 'C') {
-                const rpn = parseExpr(expression);
-                workletNode.port.postMessage({ type: 'setRPN', rpn, mode: 'C', keepTime: !!keepTime });
-            } else {
-                workletNode.port.postMessage({ type: 'setJS', expr: expression, mode: currentMode, keepTime: !!keepTime });
-            }
         }
 
         // Start audio
@@ -1392,15 +1434,15 @@ A(T)/2
             await initAudio();
 
             // Recreate context if sample rate changed
-            if (audioCtx.sampleRate !== currentSampleRate) {
+            if (audioCtx.sampleRate !== sampleRates[srIndex]) {
                 audioCtx.close();
                 audioCtx = null;
                 workletNode = null;
-                gainNode = null;
                 await initAudio();
             }
 
-            sendExpression(false);
+            const rpn = parseExpr(expression);
+            workletNode.port.postMessage({ type: 'setRPN', rpn });
             workletNode.port.postMessage({ type: 'play' });
 
             if (audioCtx.state === 'suspended') {
@@ -1420,11 +1462,25 @@ A(T)/2
             if (isPlaying) {
                 stopAudio();
                 isPlaying = false;
-                if (playBtnEl) { playBtnEl.querySelector('.key-main').textContent = '▸'; playBtnEl.classList.remove('active'); }
+                playBtn.textContent = 'Play';
+                playBtn.classList.remove('active');
             } else {
                 await startAudio();
                 isPlaying = true;
-                if (playBtnEl) { playBtnEl.querySelector('.key-main').textContent = '■'; playBtnEl.classList.add('active'); }
+                playBtn.textContent = 'Stop';
+                playBtn.classList.add('active');
+            }
+        }
+
+        // Toggle live mode
+        async function toggleLive() {
+            liveMode = !liveMode;
+            liveBtn.classList.toggle('active', liveMode);
+
+            if (liveMode && isPlaying) {
+                // Refresh RPN
+                const rpn = parseExpr(expression);
+                workletNode.port.postMessage({ type: 'setRPN', rpn });
             }
         }
 
@@ -1454,246 +1510,100 @@ A(T)/2
             currentRepeatAction = null;
         }
 
-        // Modal state handlers
-        function enterSrInput() {
-            srInputMode = true;
-            srInputBuffer = String(currentSampleRate);
-            updateDisplay();
-        }
-
-        function confirmSrInput() {
-            const sr = parseInt(srInputBuffer) || currentSampleRate;
-            currentSampleRate = Math.max(100, Math.min(48000, sr));
-            srInputMode = false;
-            localStorage.setItem('bytebeat-sr', currentSampleRate);
-            updateDisplay();
-            if (isPlaying) { stopAudio(); startAudio(); }
-        }
-
-        function cancelModal() {
-            srInputMode = false;
-            modeSelectMode = false;
-            updateDisplay();
-        }
-
-        function enterModeSelect() {
-            modeSelectMode = true;
-            updateDisplay();
-        }
-
-        function cycleModeSelect(dir) {
-            const idx = modes.indexOf(currentMode);
-            currentMode = modes[(idx + dir + modes.length) % modes.length];
-            updateDisplay();
-        }
-
-        function confirmModeSelect() {
-            modeSelectMode = false;
-            localStorage.setItem('bytebeat-mode', currentMode);
-            updateDisplay();
-            if (isPlaying) { stopAudio(); startAudio(); }
-        }
-
-        function adjustVolume(delta) {
-            volume = Math.max(0, Math.min(1, Math.round((volume + delta) * 10) / 10));
-            if (gainNode) gainNode.gain.value = volume;
-            updateDisplay();
-        }
-
-        // Key map: 6 columns x 6 rows
-        const keymap = [
-            // Row 0
-            {base:'(', shift:'MOD', shiftAction:'mod', abc:'a', abcShift:'A'},
-            {base:')', shift:'SR', shiftAction:'sr', abc:'b', abcShift:'B'},
-            {base:'[', shift:'V+', shiftAction:'vol-up', abc:'c', abcShift:'C'},
-            {base:']', shift:'V-', shiftAction:'vol-down', abc:'d', abcShift:'D'},
-            {action:'abc', label:'ABC', cls:'abc toggle'},
-            {action:'del', label:'DEL', cls:'action'},
-            // Row 1
-            {base:'?', abc:'e', abcShift:'E'},
-            {base:':', abc:'f', abcShift:'F'},
-            {base:'!', abc:'g', abcShift:'G'},
-            {base:'&', abc:'h', abcShift:'H'},
-            {base:'|', abc:'i', abcShift:'I'},
-            {base:'^', abc:'j', abcShift:'J'},
-            // Row 2
-            {base:'7', abc:'k', abcShift:'K'},
-            {base:'8', abc:'l', abcShift:'L'},
-            {base:'9', abc:'m', abcShift:'M'},
-            {base:'<', shift:'{', abc:'n', abcShift:'N'},
-            {base:'>', shift:'}', abc:'o', abcShift:'O'},
-            {base:'=', shift:'#', abc:'p', abcShift:'P'},
-            // Row 3
-            {base:'4', abc:'q', abcShift:'Q'},
-            {base:'5', abc:'r', abcShift:'R'},
-            {base:'6', abc:'s', abcShift:'S'},
-            {base:'+', shift:';', abc:'t', abcShift:'T'},
-            {base:'-', shift:',', abc:'u', abcShift:'U'},
-            {base:'%', shift:'$', abc:'v', abcShift:'V'},
-            // Row 4
-            {base:'1', abc:'w', abcShift:'W'},
-            {base:'2', abc:'x', abcShift:'X'},
-            {base:'3', abc:'y', abcShift:'Y'},
-            {base:'*', shift:'@', abc:'z', abcShift:'Z'},
-            {base:'/', shift:'\\', abcAction:'tab', abcLabel:'TAB', abcShift:null},
-            {base:'~', shift:'$', abcAction:'enter', abcLabel:'\u21B5', abcShift:null},
-            // Row 5
-            {action:'shift', label:'\u2302', cls:'shift toggle'},
-            {base:'0', abc:' ', abcLabel:'SP', abcShift:null},
-            {base:'.', shift:'t', abc:'_', abcShift:null},
-            {action:'left', label:'\u2190', cls:'nav'},
-            {action:'right', label:'\u2192', cls:'nav'},
-            {action:'play', label:'\u25B8', cls:'play'},
-        ];
-
-        function escapeHtml(s) {
-            return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-        }
-
-        function getKeyChar(k) {
-            if (k.action) return null;
-            if (abcMode) {
-                if (shiftActive) {
-                    if ('abcShift' in k) return k.abcShift;
-                    if (k.abcAction) return null;
-                    return k.abc || k.base;
-                }
-                if (k.abcAction === 'tab') return '   ';
-                if (k.abcAction === 'enter') return '\n';
-                if (k.abc !== undefined) return k.abc;
-                return k.base;
-            }
-            if (shiftActive) {
-                if (k.shiftAction) return null;
-                return k.shift || k.base;
-            }
-            return k.base;
-        }
-
-        function handleShiftAction(action) {
-            switch (action) {
-                case 'mod': enterModeSelect(); break;
-                case 'sr': enterSrInput(); break;
-                case 'vol-up': adjustVolume(0.1); break;
-                case 'vol-down': adjustVolume(-0.1); break;
-            }
-        }
-
-        function buildKeyboard() {
-            const kb = document.getElementById('keyboard');
-            kb.innerHTML = '';
-            keymap.forEach(k => {
-                const btn = document.createElement('button');
-                btn.className = 'key' + (k.cls ? ' ' + k.cls : '');
-                if (k.action) {
-                    btn.innerHTML = '<span class="key-main">' + k.label + '</span>';
-                } else {
-                    const sh = k.shift ? escapeHtml(k.shift) : '';
-                    const ab = k.abcLabel || (k.abc && k.abc.trim() ? k.abc : '') || '';
-                    btn.innerHTML =
-                        '<span class="key-hint shift">' + sh + '</span>' +
-                        '<span class="key-main">' + escapeHtml(k.base) + '</span>' +
-                        '<span class="key-hint abc">' + escapeHtml(ab) + '</span>';
-                }
-                if (k.action) {
-                    setupActionKey(btn, k);
-                } else {
-                    setupCharKey(btn, k);
-                }
-                kb.appendChild(btn);
+        // Event handlers
+        document.querySelectorAll('.key[data-char]').forEach(key => {
+            const char = key.dataset.char;
+            
+            // Touch events for key repeat
+            key.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                startKeyRepeat(() => insertChar(char));
             });
-        }
+            
+            key.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                stopKeyRepeat();
+            });
+            
+            key.addEventListener('touchcancel', (e) => {
+                e.preventDefault();
+                stopKeyRepeat();
+            });
+            
+            // Mouse events (for desktop)
+            key.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                startKeyRepeat(() => insertChar(char));
+            });
+            
+            key.addEventListener('mouseup', (e) => {
+                e.preventDefault();
+                stopKeyRepeat();
+            });
+            
+            key.addEventListener('mouseleave', () => {
+                stopKeyRepeat();
+            });
+        });
 
-        function setupCharKey(btn, k) {
-            const doPress = () => {
-                // Handle shift actions (MOD, SR, V+, V-)
-                if (shiftActive && k.shiftAction) {
-                    handleShiftAction(k.shiftAction);
-                    return;
-                }
-                // Handle modal states
-                if (srInputMode) {
-                    const ch = k.base;
-                    if ('0123456789'.includes(ch)) {
-                        srInputBuffer += ch;
-                        updateDisplay();
-                    }
-                    return;
-                }
-                if (modeSelectMode) return;
-                // Normal key press
-                const ch = getKeyChar(k);
-                if (ch != null) insertChar(ch);
-            };
-            btn.addEventListener('touchstart', e => { e.preventDefault(); startKeyRepeat(doPress); });
-            btn.addEventListener('touchend', e => { e.preventDefault(); stopKeyRepeat(); });
-            btn.addEventListener('touchcancel', e => { e.preventDefault(); stopKeyRepeat(); });
-            btn.addEventListener('mousedown', e => { e.preventDefault(); startKeyRepeat(doPress); });
-            btn.addEventListener('mouseup', e => { e.preventDefault(); stopKeyRepeat(); });
-            btn.addEventListener('mouseleave', () => stopKeyRepeat());
-        }
-
-        function setupActionKey(btn, k) {
-            const repeatables = ['del', 'left', 'right'];
-            const doAction = () => {
-                // Handle modal states
-                if (srInputMode) {
-                    if (k.action === 'del') { srInputBuffer = srInputBuffer.slice(0, -1); updateDisplay(); }
-                    else if (k.action === 'play') { confirmSrInput(); }
-                    return;
-                }
-                if (modeSelectMode) {
-                    if (k.action === 'left') { cycleModeSelect(-1); }
-                    else if (k.action === 'right') { cycleModeSelect(1); }
-                    else if (k.action === 'play') { confirmModeSelect(); }
-                    return;
-                }
-                // Normal actions
-                switch (k.action) {
+        document.querySelectorAll('.key[data-action]').forEach(key => {
+            const action = key.dataset.action;
+            
+            // Determine which actions should repeat
+            const repeatableActions = ['del', 'left', 'right'];
+            const shouldRepeat = repeatableActions.includes(action);
+            
+            const executeAction = () => {
+                switch (action) {
                     case 'del': deleteChar(); break;
                     case 'left': moveCursor(-1); break;
                     case 'right': moveCursor(1); break;
                     case 'play': togglePlay(); break;
-                    case 'abc': toggleAbc(); break;
+                    case 'live': toggleLive(); break;
+                    case 'hex': toggleHex(); break;
+                    case 'sr': cycleSampleRate(); break;
+                    case 'fn': toggleFn(); break;
+                    case 'bin': insertChar('0b'); break;
+                    case 'hex-prefix': insertChar('0x'); break;
                 }
             };
-            if (k.action === 'shift') {
-                const activate = () => { shiftActive = true; btn.classList.add('active'); };
-                const deactivate = () => { shiftActive = false; shiftLocked = false; btn.classList.remove('active'); };
-                const onDown = () => {
-                    if (shiftLocked) { deactivate(); return; }
-                    activate();
-                    shiftLongPressTimer = setTimeout(() => { shiftLocked = true; shiftLongPressTimer = null; }, SHIFT_LONG_PRESS_MS);
-                };
-                const onUp = () => {
-                    if (shiftLongPressTimer) { clearTimeout(shiftLongPressTimer); shiftLongPressTimer = null; }
-                    if (!shiftLocked) deactivate();
-                };
-                btn.addEventListener('touchstart', e => { e.preventDefault(); onDown(); });
-                btn.addEventListener('touchend', e => { e.preventDefault(); onUp(); });
-                btn.addEventListener('touchcancel', e => { e.preventDefault(); onUp(); });
-                btn.addEventListener('mousedown', e => { e.preventDefault(); onDown(); });
-                btn.addEventListener('mouseup', e => { e.preventDefault(); onUp(); });
-                btn.addEventListener('mouseleave', () => { if (!shiftLocked) onUp(); });
-            } else if (repeatables.includes(k.action)) {
-                btn.addEventListener('touchstart', e => { e.preventDefault(); startKeyRepeat(doAction); });
-                btn.addEventListener('touchend', e => { e.preventDefault(); stopKeyRepeat(); });
-                btn.addEventListener('touchcancel', e => { e.preventDefault(); stopKeyRepeat(); });
-                btn.addEventListener('mousedown', e => { e.preventDefault(); startKeyRepeat(doAction); });
-                btn.addEventListener('mouseup', e => { e.preventDefault(); stopKeyRepeat(); });
-                btn.addEventListener('mouseleave', () => stopKeyRepeat());
+            
+            if (shouldRepeat) {
+                // Touch events for repeatable actions
+                key.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    startKeyRepeat(executeAction);
+                });
+                
+                key.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    stopKeyRepeat();
+                });
+                
+                key.addEventListener('touchcancel', (e) => {
+                    e.preventDefault();
+                    stopKeyRepeat();
+                });
+                
+                // Mouse events for repeatable actions
+                key.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    startKeyRepeat(executeAction);
+                });
+                
+                key.addEventListener('mouseup', (e) => {
+                    e.preventDefault();
+                    stopKeyRepeat();
+                });
+                
+                key.addEventListener('mouseleave', () => {
+                    stopKeyRepeat();
+                });
             } else {
-                btn.addEventListener('click', doAction);
+                // Non-repeatable actions use click
+                key.addEventListener('click', executeAction);
             }
-            if (k.action === 'abc') abcBtnEl = btn;
-            if (k.action === 'play') playBtnEl = btn;
-        }
-
-        function toggleAbc() {
-            abcMode = !abcMode;
-            if (abcBtnEl) abcBtnEl.classList.toggle('active', abcMode);
-            modeDisplay.textContent = abcMode ? 'ABC' : '';
-        }
+        });
 
         // Keyboard support for desktop
         let physicalKeyRepeat = new Map(); // Track which keys are being held
@@ -1805,8 +1715,7 @@ A(T)/2
         tabPresets.addEventListener('click', () => switchLibraryTab('presets'));
         tabSaved.addEventListener('click', () => switchLibraryTab('saved'));
 
-        // Build keyboard and initial display
-        buildKeyboard();
+        // Initial display
         updateDisplay();
     </script>
 </body>
