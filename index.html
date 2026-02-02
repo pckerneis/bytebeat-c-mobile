@@ -421,10 +421,20 @@ class BytebeatProcessor extends AudioWorkletProcessor {
         super();
         this.t = 0;
         this.rpn = [];
+        this.jsFunc = null;
+        this.mode = 'C';
         this.playing = false;
         this.port.onmessage = (e) => {
             if (e.data.type === 'setRPN') {
                 this.rpn = e.data.rpn;
+                this.jsFunc = null;
+                this.mode = e.data.mode || 'C';
+                if (!e.data.keepTime) this.t = 0;
+            } else if (e.data.type === 'setJS') {
+                try { this.jsFunc = new Function('t', 'return ' + e.data.expr); }
+                catch(err) { this.jsFunc = null; }
+                this.rpn = [];
+                this.mode = e.data.mode;
                 if (!e.data.keepTime) this.t = 0;
             } else if (e.data.type === 'play') {
                 this.playing = true;
@@ -590,8 +600,26 @@ class BytebeatProcessor extends AudioWorkletProcessor {
         }
         const channel = output[0];
         for (let i = 0; i < channel.length; i++) {
-            const sample = this.evalRPN(this.t);
-            channel[i] = (sample - 128) / 128;
+            let raw;
+            if (this.jsFunc) {
+                try { raw = this.jsFunc(this.t); } catch(e) { raw = 0; }
+            } else {
+                raw = this.evalRPN(this.t);
+            }
+            switch (this.mode) {
+                case 'JS-float':
+                    channel[i] = Math.max(-1, Math.min(1, raw || 0));
+                    break;
+                case 'JS-int8':
+                    channel[i] = Math.max(-1, Math.min(1, (raw || 0) / 128));
+                    break;
+                case 'JS-uint8':
+                    channel[i] = (((raw || 0) & 255) - 128) / 128;
+                    break;
+                default:
+                    channel[i] = (raw - 128) / 128;
+                    break;
+            }
             this.t++;
         }
         return true;
@@ -652,8 +680,7 @@ registerProcessor('bytebeat-processor', BytebeatProcessor);
         let cursorPos = expression.length;
         let undoStack = [];
         let redoStack = [];
-        let sampleRates = [8000, 11025, 16000, 22050, 32000, 44100, 48000];
-        let srIndex = 0;
+        let currentSampleRate = 8000;
         let abcMode = false;
         let shiftActive = false;
         let playBtnEl = null;
@@ -662,6 +689,13 @@ registerProcessor('bytebeat-processor', BytebeatProcessor);
         let liveMode = false;
         let audioCtx = null;
         let workletNode = null;
+        let gainNode = null;
+        let currentMode = 'C';
+        let volume = 1.0;
+        let srInputMode = false;
+        let srInputBuffer = '';
+        let modeSelectMode = false;
+        const modes = ['C', 'JS-uint8', 'JS-int8', 'JS-float'];
         let savedSongs = JSON.parse(localStorage.getItem('bytebeat-saved') || '[]');
         let currentLibraryTab = 'presets';
 
@@ -735,27 +769,36 @@ registerProcessor('bytebeat-processor', BytebeatProcessor);
 
         // Update display
         function updateDisplay() {
-            exprBefore.textContent = expression.slice(0, cursorPos);
-            if (cursorPos >= expression.length) {
-                // Cursor at end - show underscore
+            if (srInputMode) {
+                exprBefore.textContent = 'SR: ' + srInputBuffer;
                 exprCursor.textContent = '_';
                 exprCursor.className = 'cursor-end';
-                exprAfter.textContent = '';
+                exprAfter.textContent = '\n\nEnter sample rate (100-48000)\n\u25B8 to confirm';
+            } else if (modeSelectMode) {
+                exprBefore.textContent = '';
+                exprCursor.textContent = '';
+                exprCursor.className = '';
+                exprAfter.textContent = '\u2190 ' + currentMode + ' \u2192\n\n\u25B8 to confirm';
             } else {
-                // Cursor inside - show inverted character
-                exprCursor.textContent = expression[cursorPos];
-                exprCursor.className = 'cursor';
-                exprAfter.textContent = expression.slice(cursorPos + 1);
+                exprBefore.textContent = expression.slice(0, cursorPos);
+                if (cursorPos >= expression.length) {
+                    exprCursor.textContent = '_';
+                    exprCursor.className = 'cursor-end';
+                    exprAfter.textContent = '';
+                } else {
+                    exprCursor.textContent = expression[cursorPos];
+                    exprCursor.className = 'cursor';
+                    exprAfter.textContent = expression.slice(cursorPos + 1);
+                }
             }
-            srDisplay.textContent = `SR: ${sampleRates[srIndex]}`;
+            srDisplay.textContent = `${currentMode} SR:${currentSampleRate} V:${volume.toFixed(1)}`;
             modeDisplay.textContent = abcMode ? 'ABC' : '';
         }
 
-        // Live update - send new RPN to worklet without resetting t
+        // Live update - send new expression to worklet without resetting t
         function liveUpdate() {
             if (liveMode && isPlaying && workletNode) {
-                const rpn = parseExpr(expression);
-                workletNode.port.postMessage({ type: 'setRPN', rpn, keepTime: true });
+                sendExpression(true);
             }
         }
 
@@ -785,16 +828,6 @@ registerProcessor('bytebeat-processor', BytebeatProcessor);
         function moveCursor(dir) {
             cursorPos = Math.max(0, Math.min(expression.length, cursorPos + dir));
             updateDisplay();
-        }
-
-        // Cycle sample rate
-        function cycleSampleRate() {
-            srIndex = (srIndex + 1) % sampleRates.length;
-            updateDisplay();
-            if (isPlaying) {
-                stopAudio();
-                startAudio();
-            }
         }
 
         // Library functions
@@ -860,10 +893,7 @@ registerProcessor('bytebeat-processor', BytebeatProcessor);
             cursorPos = expression.length;
             
             // Set sample rate
-            const srIdx = sampleRates.indexOf(song.sampleRate);
-            if (srIdx !== -1) {
-                srIndex = srIdx;
-            }
+            currentSampleRate = song.sampleRate;
             
             updateDisplay();
             saveExpression();
@@ -890,7 +920,7 @@ registerProcessor('bytebeat-processor', BytebeatProcessor);
             const song = {
                 title: title,
                 author: author,
-                sampleRate: sampleRates[srIndex],
+                sampleRate: currentSampleRate,
                 code: expression
             };
             
@@ -1301,16 +1331,30 @@ registerProcessor('bytebeat-processor', BytebeatProcessor);
         async function initAudio() {
             if (audioCtx) return;
 
-            audioCtx = new AudioContext({ sampleRate: sampleRates[srIndex] });
+            audioCtx = new AudioContext({ sampleRate: currentSampleRate });
 
             const blob = new Blob([workletCode], { type: 'application/javascript' });
             const url = URL.createObjectURL(blob);
 
             await audioCtx.audioWorklet.addModule(url);
             workletNode = new AudioWorkletNode(audioCtx, 'bytebeat-processor');
-            workletNode.connect(audioCtx.destination);
+            gainNode = audioCtx.createGain();
+            gainNode.gain.value = volume;
+            workletNode.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
 
             URL.revokeObjectURL(url);
+        }
+
+        // Send expression to worklet based on current mode
+        function sendExpression(keepTime) {
+            if (!workletNode) return;
+            if (currentMode === 'C') {
+                const rpn = parseExpr(expression);
+                workletNode.port.postMessage({ type: 'setRPN', rpn, mode: 'C', keepTime: !!keepTime });
+            } else {
+                workletNode.port.postMessage({ type: 'setJS', expr: expression, mode: currentMode, keepTime: !!keepTime });
+            }
         }
 
         // Start audio
@@ -1318,15 +1362,15 @@ registerProcessor('bytebeat-processor', BytebeatProcessor);
             await initAudio();
 
             // Recreate context if sample rate changed
-            if (audioCtx.sampleRate !== sampleRates[srIndex]) {
+            if (audioCtx.sampleRate !== currentSampleRate) {
                 audioCtx.close();
                 audioCtx = null;
                 workletNode = null;
+                gainNode = null;
                 await initAudio();
             }
 
-            const rpn = parseExpr(expression);
-            workletNode.port.postMessage({ type: 'setRPN', rpn });
+            sendExpression(false);
             workletNode.port.postMessage({ type: 'play' });
 
             if (audioCtx.state === 'suspended') {
@@ -1380,13 +1424,57 @@ registerProcessor('bytebeat-processor', BytebeatProcessor);
             currentRepeatAction = null;
         }
 
+        // Modal state handlers
+        function enterSrInput() {
+            srInputMode = true;
+            srInputBuffer = String(currentSampleRate);
+            updateDisplay();
+        }
+
+        function confirmSrInput() {
+            const sr = parseInt(srInputBuffer) || currentSampleRate;
+            currentSampleRate = Math.max(100, Math.min(48000, sr));
+            srInputMode = false;
+            updateDisplay();
+            if (isPlaying) { stopAudio(); startAudio(); }
+        }
+
+        function cancelModal() {
+            srInputMode = false;
+            modeSelectMode = false;
+            updateDisplay();
+        }
+
+        function enterModeSelect() {
+            modeSelectMode = true;
+            updateDisplay();
+        }
+
+        function cycleModeSelect(dir) {
+            const idx = modes.indexOf(currentMode);
+            currentMode = modes[(idx + dir + modes.length) % modes.length];
+            updateDisplay();
+        }
+
+        function confirmModeSelect() {
+            modeSelectMode = false;
+            updateDisplay();
+            if (isPlaying) { stopAudio(); startAudio(); }
+        }
+
+        function adjustVolume(delta) {
+            volume = Math.max(0, Math.min(1, Math.round((volume + delta) * 10) / 10));
+            if (gainNode) gainNode.gain.value = volume;
+            updateDisplay();
+        }
+
         // Key map: 6 columns x 6 rows
         const keymap = [
             // Row 0
-            {base:'(', abc:'a', abcShift:'A'},
-            {base:')', abc:'b', abcShift:'B'},
-            {base:'[', abc:'c', abcShift:'C'},
-            {base:']', abc:'d', abcShift:'D'},
+            {base:'(', shift:'MOD', shiftAction:'mod', abc:'a', abcShift:'A'},
+            {base:')', shift:'SR', shiftAction:'sr', abc:'b', abcShift:'B'},
+            {base:'[', shift:'V+', shiftAction:'vol-up', abc:'c', abcShift:'C'},
+            {base:']', shift:'V-', shiftAction:'vol-down', abc:'d', abcShift:'D'},
             {action:'abc', label:'ABC', cls:'abc toggle'},
             {action:'del', label:'DEL', cls:'action'},
             // Row 1
@@ -1443,8 +1531,20 @@ registerProcessor('bytebeat-processor', BytebeatProcessor);
                 if (k.abc !== undefined) return k.abc;
                 return k.base;
             }
-            if (shiftActive) return k.shift || k.base;
+            if (shiftActive) {
+                if (k.shiftAction) return null;
+                return k.shift || k.base;
+            }
             return k.base;
+        }
+
+        function handleShiftAction(action) {
+            switch (action) {
+                case 'mod': enterModeSelect(); break;
+                case 'sr': enterSrInput(); break;
+                case 'vol-up': adjustVolume(0.1); break;
+                case 'vol-down': adjustVolume(-0.1); break;
+            }
         }
 
         function buildKeyboard() {
@@ -1474,6 +1574,22 @@ registerProcessor('bytebeat-processor', BytebeatProcessor);
 
         function setupCharKey(btn, k) {
             const doPress = () => {
+                // Handle shift actions (MOD, SR, V+, V-)
+                if (shiftActive && k.shiftAction) {
+                    handleShiftAction(k.shiftAction);
+                    return;
+                }
+                // Handle modal states
+                if (srInputMode) {
+                    const ch = k.base;
+                    if ('0123456789'.includes(ch)) {
+                        srInputBuffer += ch;
+                        updateDisplay();
+                    }
+                    return;
+                }
+                if (modeSelectMode) return;
+                // Normal key press
                 const ch = getKeyChar(k);
                 if (ch != null) insertChar(ch);
             };
@@ -1488,6 +1604,19 @@ registerProcessor('bytebeat-processor', BytebeatProcessor);
         function setupActionKey(btn, k) {
             const repeatables = ['del', 'left', 'right'];
             const doAction = () => {
+                // Handle modal states
+                if (srInputMode) {
+                    if (k.action === 'del') { srInputBuffer = srInputBuffer.slice(0, -1); updateDisplay(); }
+                    else if (k.action === 'play') { confirmSrInput(); }
+                    return;
+                }
+                if (modeSelectMode) {
+                    if (k.action === 'left') { cycleModeSelect(-1); }
+                    else if (k.action === 'right') { cycleModeSelect(1); }
+                    else if (k.action === 'play') { confirmModeSelect(); }
+                    return;
+                }
+                // Normal actions
                 switch (k.action) {
                     case 'del': deleteChar(); break;
                     case 'left': moveCursor(-1); break;

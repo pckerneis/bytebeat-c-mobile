@@ -1,10 +1,8 @@
-# Bytebeat C Mobile
+# BytebeatPocket Mobile
 
-A C Bytebeat Composer optimized for mobile.
+A Bytebeat Composer optimized for mobile.
 
 Compact calculator feel, single page, pure HTML5.
-
-RPN VM in audio worklet.
 
 ## Interface
 
@@ -36,7 +34,7 @@ Base+Shift
 
 ```
 ┌───┬───┬───┬───┬───┬───┐
-│   |   |   |   |ABC|DEL|
+│MOD|SR |V+ |V- |ABC|DEL|
 ├───┼───┼───┼───┼───┼───┤
 │   |   |   |   |   |   |
 ├───┼───┼───┼───┼───┼───┤
@@ -95,6 +93,10 @@ Special keys:
 - `DEL` delete at caret
 - `TAB` insert tab (3 spaces)
 - `↲` insert new line
+- `SR` enter Sample rate selection. Display prompts for sample rate, between 100 and 48000. Only digits are accepted. "Play" key to validate and leave Sample rate selection.
+- `MOD` enter Mode selection. Left and right keys allow to cycle through modes ("C", "JS-uint8", "JS-int8" and "JS-float"). "Play" key to validate and live Mode selection.
+- `V+` to increase volume by step of 0.1 (between 0 and 1).
+- `V-` to decrease volume by step of 0.1 (between 0 and 1).
 
 *Holding shift activates secondary key if one is defined, normal key otherwise.
 
